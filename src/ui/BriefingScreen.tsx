@@ -14,7 +14,7 @@ const DIFFICULTIES: Array<{
   label: string;
   description: string;
 }> = [
-  { id: 'story', label: 'STORY', description: 'Forgiving combat · stronger aim assist' },
+  { id: 'story', label: 'STORY', description: 'Forgiving combat · lower enemy pressure' },
   { id: 'normal', label: 'DESCENT', description: 'The intended experience' },
   { id: 'nightmare', label: 'NIGHTMARE', description: 'Faster threats · no mercy' },
 ];

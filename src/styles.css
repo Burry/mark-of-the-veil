@@ -2053,6 +2053,20 @@ input[type='range']::-moz-range-thumb {
   font-size: 1.3rem;
   font-weight: 400;
 }
+.result-best {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.7rem;
+  margin: 0.65rem 0 0.2rem;
+  color: var(--ash);
+  font-size: 0.54rem;
+  letter-spacing: 0.12em;
+}
+.result-best strong {
+  color: var(--bone);
+  font-weight: 600;
+}
 .result-no-stats {
   color: var(--ash);
 }

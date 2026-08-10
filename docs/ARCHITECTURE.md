@@ -3,7 +3,7 @@
 ## Runtime boundary
 
 React owns low-frequency product state: title/briefing, menus, settings, HUD snapshots, upgrade
-choice, and results. `GameRuntime` owns the Three.js scene, fixed-step simulation, input sampling,
+choice, and results. `GameRuntime` owns the Three.js scene, the clamped simulation loop, input sampling,
 AI, combat, cameras, particles, audio events, and disposal. React never receives per-object
 transforms or per-frame particle state.
 
@@ -77,12 +77,12 @@ capability-gated; gameplay never relies on vibration.
 
 Settings and best-run data are versioned in `localStorage` and fail open when storage is blocked.
 Unsupported WebGL devices receive a real fallback screen. Tab hiding, blur, and context problems
-pause the simulation rather than allowing invisible damage or a runaway audio graph.
+pause the simulation, preventing invisible damage and runaway audio.
 
 ## Verification strategy
 
 - Vitest covers pure state, storage fallbacks, input transforms, ranking, and feedback routing.
 - Browser smoke tests cover title → start → rendered canvas → perspective toggle → pause/resume.
-- Production preview is tested, not only the Vite development server.
+- Browser smoke tests run against the production preview.
 - Visual QA compares the accepted gameplay/menu concepts with native 1672×941 screenshots, a
   hardware-path acceptance pass, and mobile portrait/landscape safety checks.

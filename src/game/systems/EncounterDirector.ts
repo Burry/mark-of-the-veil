@@ -118,7 +118,7 @@ export class EncounterDirector {
         detail: near
           ? 'Mark found the last bright thing in the Root Vault.'
           : 'Retrieve Mark’s carrot before breaching the city.',
-        prompt: near ? '[E / X] RECOVER CARROT' : null,
+        prompt: near ? 'RECOVER CARROT' : null,
       };
     }
     if (this.phase === 'travel') {
@@ -127,7 +127,7 @@ export class EncounterDirector {
       return {
         objective: 'BREAK THE THREE SEALS',
         detail: `Reach Veil Seal ${this.sealsBroken + 1} of ${this.sealPositions.length}.`,
-        prompt: near ? '[E / X] BREACH SEAL' : null,
+        prompt: near ? 'BREACH SEAL' : null,
       };
     }
     if (this.phase === 'encounter') {
@@ -156,7 +156,7 @@ export class EncounterDirector {
       return {
         objective: 'ENTER THE ROOT CHOIR',
         detail: 'The Regent’s mind is open. Ride the Wayfarer signal into the alien Crown.',
-        prompt: near ? '[E / X] INFILTRATE HIVE-MIND' : null,
+        prompt: near ? 'INFILTRATE HIVE-MIND' : null,
       };
     }
     return { objective: 'RUN COMPLETE', detail: 'The Veil remembers Mark.', prompt: null };

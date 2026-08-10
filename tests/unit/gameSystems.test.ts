@@ -148,9 +148,9 @@ describe('EncounterDirector', () => {
     const far = new THREE.Vector3(100, 0, 100);
 
     expect(director.presentation(far).prompt).toBeNull();
-    expect(director.presentation(carrot).prompt).toContain('RECOVER CARROT');
+    expect(director.presentation(carrot).prompt).toBe('RECOVER CARROT');
     director.update(0.1, carrot, 0, true);
-    expect(director.presentation(seals[0] as THREE.Vector3).prompt).toContain('BREACH SEAL');
+    expect(director.presentation(seals[0] as THREE.Vector3).prompt).toBe('BREACH SEAL');
 
     director.end();
     expect(director.presentation(far).objective).toBe('RUN COMPLETE');

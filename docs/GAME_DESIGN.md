@@ -1,26 +1,25 @@
-# Game design — Mark of the Veil
+# Game design: Mark of the Veil
 
 ## Premise
 
 Mark is a scarred anthropomorphic purple unicorn, former starfighter ace, and the last pilot able
-to breach the Eidolon Crown—a moon-sized machine turning Vespera's living minds into a broadcast.
+to breach the Eidolon Crown, a moon-sized machine turning Vespera's living minds into a broadcast.
 His fighter, the **Wayfarer**, is shot down over a storm-wrapped city. Mark is captured beneath the
 ruins, escapes with his battered Sunlance and a carrot kept as a reminder of home, then lights the
 three seals that can guide the Wayfarer back to him.
 
-The release is a complete replayable mission rather than a campaign fragment. Its tone is earnest
-cosmic fantasy with dry warmth. The carrot is a recovery relic and character beat, not a comedy
-power-up.
+The release is one complete replayable mission. Its tone is earnest cosmic fantasy with dry warmth.
+The carrot works as both a recovery relic and a character beat.
 
 ## Run structure
 
-1. **The Root Vault** — break the last restraint, reclaim the carrot, learn move/look/fire/dash,
+1. **The Root Vault:** break the last restraint, reclaim the carrot, learn move/look/fire/dash,
    and step into the drowned cathedral-city.
-2. **The Three Seals** — clear three escalating encounters and activate each signal seal.
-3. **Relic Communion** — select one run upgrade.
-4. **The Hollow Regent** — survive projectile patterns and adds, then break the exposed core.
-5. **The Root Choir** — use the Wayfarer signal to infiltrate the exposed alien hive-mind.
-6. **The Revelation** — Mark receives the Choir's total knowledge and discovers that unicorns
+2. **The Three Seals:** clear three escalating encounters and activate each signal seal.
+3. **Relic Communion:** select one run upgrade.
+4. **The Hollow Regent:** survive projectile patterns and adds, then break the exposed core.
+5. **The Root Choir:** use the Wayfarer signal to infiltrate the exposed alien hive-mind.
+6. **The Revelation:** Mark receives the Choir's total knowledge and discovers that unicorns
    never existed: his body, species, and remembered home were an interface authored by the prison.
    With no boundary left between knower and knowledge, Mark ceases to exist. The Choir retains his
    memory; the player receives time, accuracy, kills, score, damage-taken, and C–S rank.

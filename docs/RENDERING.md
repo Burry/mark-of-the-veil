@@ -26,8 +26,8 @@ The implementation was checked against current primary documentation:
   requires linear-sRGB work and an `OutputPass` for display conversion when post-processing is
   active. Both HDR and fallback pipelines follow that contract.
 
-This evidence favors a production WebGL2 gameplay renderer today, with the newer WebGPU/TSL route
-remaining a future migration rather than an unstable default.
+This evidence favors a production WebGL2 gameplay renderer today. The newer WebGPU/TSL route
+remains a future migration.
 
 ## Runtime tiers
 
@@ -50,8 +50,8 @@ Mark, nearby key enemies, and major cathedral architecture are prioritized withi
 budget. Screen particles, the far cyclorama, rubble, hanging-chain microdetail, and fake contact
 shadows remain in the raster convergence underlay. Instanced foreground details are expanded into
 correct world-space proxy meshes for the snapshot. Every visibility and material substitution is
-restored immediately after the generator returns its worker promise, rather than remaining in the
-live scene while the BVH builds.
+restored immediately after the generator returns its worker promise. The live scene stays unchanged
+while the BVH builds.
 
 ## Performance and fallback behavior
 
@@ -90,7 +90,7 @@ live scene while the BVH builds.
 
 ## Native performance verification
 
-The rescue pass was measured in the hardware-backed Codex browser on an Apple M4 at a native
+The rescue pass was measured in hardware-backed Chromium on an Apple M4 at a native
 1672 × 941 canvas using the unchanged in-game half-second FPS sampler. `?diagnostics=1` disabled
 only frozen-frame path tracing so the moving raster path could be compared consistently.
 
@@ -103,9 +103,9 @@ only frozen-frame path tracing so the moving raster path could be compared consi
 
 The optimized High frame remains at the richer first degradation level. Its higher submitted-call
 and triangle counts include GTAO's retained scene-normal pass; the old baseline had already disabled
-GTAO. The gain therefore comes from reducing fragment-light loops, redundant sampling/resolves,
-shadow filtering, and full-screen post-processing bandwidth rather than removing scene geometry or
-altering the FPS counter.
+GTAO. The gain comes from reducing fragment-light loops, redundant sampling/resolves, shadow
+filtering, and full-screen post-processing bandwidth. Scene geometry and the FPS counter remain
+unchanged.
 
 ## Material and shadow calibration
 

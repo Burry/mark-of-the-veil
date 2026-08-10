@@ -43,11 +43,11 @@ test.describe('Mark of the Veil production shell', () => {
 
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
       'href',
-      'https://mark-of-the-veil.vercel.app/',
+      'https://mark-of-the-veil.burry.io/',
     );
     await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
       'content',
-      'https://mark-of-the-veil.vercel.app/og-image.jpg',
+      'https://mark-of-the-veil.burry.io/og-image.jpg',
     );
     await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute(
       'content',

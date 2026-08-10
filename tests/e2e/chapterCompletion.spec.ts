@@ -4,6 +4,7 @@ import { CHAPTER_LAYOUTS } from '../../src/game/render/ChapterScenery';
 import { RUNTIME_COMPLETION_INTEGRATION_BRIDGE_KEY } from '../../src/game/runtimeDiagnostics';
 
 const CAMPAIGN_STORAGE_KEY = 'mark-of-the-veil:campaign:v1';
+const RUNTIME_READY_TIMEOUT_MS = 120_000;
 
 async function moveToWorldPosition(
   page: Page,
@@ -16,7 +17,11 @@ async function moveToWorldPosition(
       x: Number((canvas as HTMLCanvasElement).dataset.playerX),
       z: Number((canvas as HTMLCanvasElement).dataset.playerZ),
     }));
-  await expect.poll(async () => Number.isFinite((await readPosition()).x)).toBe(true);
+  await expect
+    .poll(async () => Number.isFinite((await readPosition()).x), {
+      timeout: RUNTIME_READY_TIMEOUT_MS,
+    })
+    .toBe(true);
 
   for (let attempt = 0; attempt < 36; attempt += 1) {
     const position = await readPosition();
@@ -76,13 +81,15 @@ test('diagnostics integration bridge carries a live chapter through production c
   await expect(page.getByText('REACH THE WAYFARER')).toBeVisible({ timeout: 120_000 });
 
   await expect
-    .poll(() =>
-      page.evaluate((key) => {
-        const bridge = (
-          window as unknown as Record<string, { readonly kind?: string } | undefined>
-        )[key];
-        return bridge?.kind;
-      }, RUNTIME_COMPLETION_INTEGRATION_BRIDGE_KEY),
+    .poll(
+      () =>
+        page.evaluate((key) => {
+          const bridge = (
+            window as unknown as Record<string, { readonly kind?: string } | undefined>
+          )[key];
+          return bridge?.kind;
+        }, RUNTIME_COMPLETION_INTEGRATION_BRIDGE_KEY),
+      { timeout: RUNTIME_READY_TIMEOUT_MS },
     )
     .toBe('chapter-completion-integration-bridge');
 

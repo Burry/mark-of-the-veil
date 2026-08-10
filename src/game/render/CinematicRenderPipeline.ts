@@ -8,8 +8,10 @@ import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
 import { SSRPass } from 'three/addons/postprocessing/SSRPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
+import type { ChapterId } from '../campaign/types';
 import type { GameSettings } from '../types/GameTypes';
 import { CinematicCompositeShader } from './CinematicCompositeShader';
+import { selectCinematicLook } from './CinematicLook';
 import { ForwardLightBudget } from './ForwardLightBudget';
 import { PathTracedPresentation, type PathTracingStatus } from './PathTracedPresentation';
 import {
@@ -66,6 +68,7 @@ export class CinematicRenderPipeline {
     scene: THREE.Scene,
     camera: THREE.PerspectiveCamera,
     settings: GameSettings,
+    private readonly chapterId: ChapterId,
   ) {
     this.capabilities = inspectGraphicsCapabilities(
       renderer.getContext() as WebGL2RenderingContext,
@@ -116,7 +119,13 @@ export class CinematicRenderPipeline {
       samples: 12,
     });
 
-    this.bloomPass = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.42, 0.34, 1.05);
+    const look = selectCinematicLook(chapterId, settings.reducedFlashes);
+    this.bloomPass = new UnrealBloomPass(
+      new THREE.Vector2(1, 1),
+      look.bloomStrength,
+      look.bloomRadius,
+      look.bloomThreshold,
+    );
     this.gradePass = new ShaderPass(CinematicCompositeShader);
     this.smaaPass = new SMAAPass();
     this.outputPass = new OutputPass();
@@ -223,8 +232,10 @@ export class CinematicRenderPipeline {
   }
 
   private applyProfile(settings: GameSettings, resizeTargets: boolean): void {
+    const look = selectCinematicLook(this.chapterId, settings.reducedFlashes);
     this.renderer.toneMapping =
       this.profile.tier === 'essential' ? THREE.ACESFilmicToneMapping : THREE.AgXToneMapping;
+    this.renderer.toneMappingExposure = look.exposure;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.shadowMap.enabled = this.profile.tier !== 'essential';
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
@@ -236,8 +247,9 @@ export class CinematicRenderPipeline {
     this.gradePass.uniforms.vignetteStrength.value = this.profile.vignetteStrength;
     this.gradePass.uniforms.sharpenStrength.value = this.profile.sharpenStrength;
     this.gradePass.uniforms.chromaAmount.value = settings.reducedMotion ? 0 : 0.0007;
-    this.bloomPass.strength = settings.reducedFlashes ? 0.22 : 0.42;
-    this.bloomPass.threshold = settings.reducedFlashes ? 1.25 : 1.05;
+    this.bloomPass.strength = look.bloomStrength;
+    this.bloomPass.radius = look.bloomRadius;
+    this.bloomPass.threshold = look.bloomThreshold;
 
     this.bloomPass.enabled = this.profile.bloom;
     this.outputPass.enabled = true;
@@ -250,6 +262,10 @@ export class CinematicRenderPipeline {
     this.renderer.domElement.dataset.pathTracingPolicy = this.pathTracingDisabledForDiagnostics
       ? 'diagnostics-disabled'
       : 'frozen-scenes';
+    this.renderer.domElement.dataset.toneMappingExposure = look.exposure.toFixed(3);
+    this.renderer.domElement.dataset.bloomStrength = look.bloomStrength.toFixed(3);
+    this.renderer.domElement.dataset.bloomRadius = look.bloomRadius.toFixed(3);
+    this.renderer.domElement.dataset.bloomThreshold = look.bloomThreshold.toFixed(3);
     if (resizeTargets) this.setSize(this.width, this.height, this.pixelRatio);
     this.materialCalibrator.update(this.profile);
   }

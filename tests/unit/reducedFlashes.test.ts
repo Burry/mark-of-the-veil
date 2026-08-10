@@ -1,8 +1,14 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { animateArena, applyArenaFlashProfile, type ArenaRig } from '../../src/game/render/Arena';
+import {
+  animateArena,
+  applyArenaCinematicLook,
+  applyArenaFlashProfile,
+  type ArenaRig,
+} from '../../src/game/render/Arena';
 import { EffectsDirector } from '../../src/game/render/EffectsDirector';
 import type { ExtractionRig, SealRig } from '../../src/game/render/ActorFactory';
+import { CHAPTER_VISUALS } from '../../src/game/render/ChapterScenery';
 
 function createParticleField(y: number): THREE.Points {
   const geometry = new THREE.BufferGeometry();
@@ -13,10 +19,11 @@ function createParticleField(y: number): THREE.Points {
 function createArenaRig(): ArenaRig {
   const sealLight = new THREE.PointLight(0xffffff, 10);
   sealLight.userData.baseIntensity = 10;
+  const sealRing = new THREE.Mesh();
   const seal: SealRig = {
     root: new THREE.Group(),
     core: new THREE.Mesh(),
-    rings: [],
+    rings: [sealRing],
     beam: new THREE.Mesh(),
     light: sealLight,
   };
@@ -27,12 +34,28 @@ function createArenaRig(): ArenaRig {
     light: new THREE.PointLight(),
   };
   const practical = new THREE.PointLight(0xffffff, 20);
+  practical.userData.authoredIntensity = 20;
   practical.userData.baseIntensity = 20;
+
+  const orbit = new THREE.Group();
+  orbit.userData.orbitSpeed = 1;
+  const memoryRing = new THREE.Group();
+  memoryRing.userData.memoryRing = 0;
+  const memoryShard = new THREE.Group();
+  memoryShard.userData.memoryShard = 0;
+  const choirCrown = new THREE.Group();
+  choirCrown.userData.choirCrown = true;
 
   return {
     root: new THREE.Group(),
+    chapterId: 'the-drowned-cathedral',
+    profile: CHAPTER_VISUALS['the-drowned-cathedral'],
+    playerStart: new THREE.Vector3(0, 0, 16.5),
+    bossPosition: new THREE.Vector3(0, 0, -1),
+    playRadius: 39.5,
+    animatedScenery: [orbit, memoryRing, memoryShard, choirCrown],
     seals: [seal],
-    carrot: new THREE.Group(),
+    recovery: new THREE.Group(),
     extraction,
     obstacles: [],
     rain: createParticleField(10),
@@ -40,6 +63,7 @@ function createArenaRig(): ArenaRig {
     lightning: new THREE.DirectionalLight(),
     practicalLights: [practical],
     surfaceTextures: [],
+    removeRenderDiagnostics: () => undefined,
   };
 }
 
@@ -63,7 +87,7 @@ function findVisibleMesh<T extends THREE.BufferGeometry>(
   return mesh as THREE.Mesh<T, THREE.MeshBasicMaterial>;
 }
 
-describe('reduced flashes rendering profile', () => {
+describe('rendering accessibility profiles', () => {
   it('removes lightning and replaces rapid arena flutter with low-amplitude ambience', () => {
     const normalArena = createArenaRig();
     animateArena(normalArena, 11, 0, false);
@@ -105,6 +129,27 @@ describe('reduced flashes rendering profile', () => {
     director.dispose();
   });
 
+  it('restores authored practical-light energy after live accessibility toggles', () => {
+    const arena = createArenaRig();
+    const vein = new THREE.MeshStandardMaterial({ emissiveIntensity: 1 });
+    arena.root.userData.veinMaterial = vein;
+
+    applyArenaCinematicLook(arena, false);
+    const standardIntensity = arena.practicalLights[0]?.intensity ?? 0;
+    const standardEmission = vein.emissiveIntensity;
+    applyArenaCinematicLook(arena, true);
+    const reducedIntensity = arena.practicalLights[0]?.intensity ?? 0;
+    const reducedEmission = vein.emissiveIntensity;
+    applyArenaCinematicLook(arena, false);
+
+    expect(reducedIntensity).toBeLessThan(standardIntensity);
+    expect(reducedEmission).toBeLessThan(standardEmission);
+    expect(arena.practicalLights[0]?.intensity).toBeCloseTo(standardIntensity, 8);
+    expect(arena.practicalLights[0]?.userData.baseIntensity).toBeCloseTo(standardIntensity, 8);
+    expect(vein.emissiveIntensity).toBeCloseTo(standardEmission, 8);
+    vein.dispose();
+  });
+
   it('emits fewer particles while preserving impact direction and timing', () => {
     const normal = new EffectsDirector(new THREE.Scene(), 'high');
     const reduced = new EffectsDirector(new THREE.Scene(), 'high', true);
@@ -125,5 +170,37 @@ describe('reduced flashes rendering profile', () => {
     expect(activeParticleCount(reduced)).toBe(9);
     normal.dispose();
     reduced.dispose();
+  });
+
+  it('substantially reduces ambient world motion without changing gameplay time', () => {
+    const normal = createArenaRig();
+    const reduced = createArenaRig();
+    const time = 7;
+    const delta = 0.1;
+
+    animateArena(normal, time, delta, false, false);
+    animateArena(reduced, time, delta, false, true);
+
+    const normalRainTravel = 10 - normal.rain.geometry.getAttribute('position').getY(0);
+    const reducedRainTravel = 10 - reduced.rain.geometry.getAttribute('position').getY(0);
+    expect(reducedRainTravel).toBeLessThan(normalRainTravel * 0.1);
+    expect(reduced.seals[0]?.core.rotation.y).toBeLessThan(
+      (normal.seals[0]?.core.rotation.y ?? 0) * 0.1,
+    );
+    expect(reduced.animatedScenery[0]?.rotation.y).toBeLessThan(
+      (normal.animatedScenery[0]?.rotation.y ?? 0) * 0.1,
+    );
+    expect(Math.abs(reduced.recovery.position.y - 0.08)).toBeLessThan(
+      Math.abs(normal.recovery.position.y - 0.08) * 0.2,
+    );
+    expect(Math.abs(reduced.extraction.ship.position.y - 17)).toBeLessThan(
+      Math.abs(normal.extraction.ship.position.y - 17) * 0.2,
+    );
+    expect(Math.abs((reduced.animatedScenery[3]?.scale.x ?? 1) - 1)).toBeLessThan(
+      Math.abs((normal.animatedScenery[3]?.scale.x ?? 1) - 1) * 0.2,
+    );
+
+    // Reduced Motion changes only presentation. Flash safety remains an independent setting.
+    expect(reduced.lightning.intensity).toBe(normal.lightning.intensity);
   });
 });

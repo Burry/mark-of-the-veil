@@ -1,8 +1,16 @@
 import { DEFAULT_SETTINGS, EMPTY_BEST_RUN } from './defaults';
+import {
+  CAMPAIGN_CHAPTERS,
+  CAMPAIGN_SCHEMA_VERSION,
+  isCampaignProgressValid,
+} from '../game/campaign';
+import type { CampaignPhase, CampaignProgress, ChapterId } from '../game/campaign';
 import type { BestRun, GameSettings } from '../game/types/GameTypes';
 
 const SETTINGS_KEY = 'mark-of-the-veil:settings:v1';
 const BEST_RUN_KEY = 'mark-of-the-veil:best-run:v1';
+const CAMPAIGN_KEY = 'mark-of-the-veil:campaign:v1';
+const PROLOGUE_KEY = 'mark-of-the-veil:prologue:v1';
 const MAX_STORED_NUMBER = Number.MAX_SAFE_INTEGER;
 
 type StoredRecord = Record<string, unknown>;
@@ -122,4 +130,106 @@ export function saveBestRun(best: BestRun): void {
   } catch {
     // Ignore quota/security failures.
   }
+}
+
+export function hasSeenPrologue(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return window.localStorage.getItem(PROLOGUE_KEY) === 'seen';
+  } catch {
+    return false;
+  }
+}
+
+export function savePrologueSeen(): void {
+  try {
+    window.localStorage.setItem(PROLOGUE_KEY, 'seen');
+  } catch {
+    // GameHost retains an in-memory fallback so denied storage never blocks play.
+  }
+}
+
+export function loadCampaignProgress(): CampaignProgress | null {
+  if (typeof window === 'undefined') return null;
+  const stored = readRecord(CAMPAIGN_KEY);
+  if (!stored || stored.schemaVersion !== CAMPAIGN_SCHEMA_VERSION) return null;
+
+  const chapterIds = new Set<string>(CAMPAIGN_CHAPTERS.map((chapter) => chapter.id));
+  const objectiveIds = new Set<string>(
+    CAMPAIGN_CHAPTERS.flatMap((chapter) => chapter.objectives.map((objective) => objective.id)),
+  );
+  const currentChapterId = stored.currentChapterId;
+  const currentObjectiveId = stored.currentObjectiveId;
+  const revelationStage = stored.revelationStage ?? null;
+  const difficulty = stored.difficulty;
+  const phase = stored.phase;
+  const completedChapterIds = stringArray(stored.completedChapterIds);
+  const completedObjectiveIds = stringArray(stored.completedObjectiveIds);
+  const upgrades = stringArray(stored.upgrades);
+
+  if (
+    typeof currentChapterId !== 'string' ||
+    !chapterIds.has(currentChapterId) ||
+    !isCampaignPhase(phase) ||
+    (difficulty !== 'story' && difficulty !== 'normal' && difficulty !== 'nightmare') ||
+    !completedChapterIds ||
+    completedChapterIds.some((id) => !chapterIds.has(id)) ||
+    !completedObjectiveIds ||
+    completedObjectiveIds.some((id) => !objectiveIds.has(id)) ||
+    !upgrades ||
+    upgrades.some((id) => id !== 'ace' && id !== 'survivor' && id !== 'stormhorn') ||
+    (revelationStage !== null &&
+      (typeof revelationStage !== 'number' || !Number.isInteger(revelationStage)))
+  ) {
+    return null;
+  }
+
+  const validCurrentObjective =
+    currentObjectiveId === null ||
+    (typeof currentObjectiveId === 'string' && objectiveIds.has(currentObjectiveId));
+  if (!validCurrentObjective || (phase === 'active' && currentObjectiveId === null)) return null;
+
+  const progress: CampaignProgress = {
+    schemaVersion: CAMPAIGN_SCHEMA_VERSION,
+    phase,
+    difficulty,
+    currentChapterId: currentChapterId as ChapterId,
+    currentObjectiveId: currentObjectiveId as CampaignProgress['currentObjectiveId'],
+    revelationStage: revelationStage as CampaignProgress['revelationStage'],
+    completedChapterIds: completedChapterIds as ChapterId[],
+    completedObjectiveIds: completedObjectiveIds as CampaignProgress['completedObjectiveIds'],
+    upgrades: upgrades as CampaignProgress['upgrades'],
+  };
+  return isCampaignProgressValid(progress) ? progress : null;
+}
+
+export function saveCampaignProgress(progress: CampaignProgress): void {
+  try {
+    window.localStorage.setItem(CAMPAIGN_KEY, JSON.stringify(progress));
+  } catch {
+    // Campaign saves are best-effort when browser storage is unavailable.
+  }
+}
+
+export function clearCampaignProgress(): void {
+  try {
+    window.localStorage.removeItem(CAMPAIGN_KEY);
+  } catch {
+    // Private browsing may deny storage writes.
+  }
+}
+
+function stringArray(value: unknown): string[] | null {
+  return Array.isArray(value) && value.every((entry) => typeof entry === 'string')
+    ? [...value]
+    : null;
+}
+
+function isCampaignPhase(value: unknown): value is CampaignPhase {
+  return (
+    value === 'active' ||
+    value === 'chapter-complete' ||
+    value === 'revelation-pending' ||
+    value === 'campaign-complete'
+  );
 }

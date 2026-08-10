@@ -3,7 +3,10 @@ import type { GameScreen } from '../game/types/GameTypes';
 
 const MENU_SCREENS = new Set<GameScreen>([
   'title',
-  'briefing',
+  'prologue',
+  'campaign',
+  'chapterBriefing',
+  'chapterComplete',
   'paused',
   'upgrade',
   'revelation',

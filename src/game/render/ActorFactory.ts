@@ -49,10 +49,28 @@ export function createMark(): MarkRig {
   pelvis.scale.set(1.08, 0.82, 0.82);
   pelvis.position.set(0, 1.4, 0.02);
   root.add(pelvis);
+  const pelvisGuard = createFurTuftShell(
+    materials.guardFur,
+    74,
+    new THREE.Vector3(0.62, 0.47, 0.49),
+    41,
+    'Mark guard coat | pelvis',
+  );
+  pelvisGuard.position.set(0, 1.4, 0.02);
+  root.add(pelvisGuard);
   const abdomen = makeMesh(new THREE.CapsuleGeometry(0.5, 0.55, 10, 24), materials.fur);
   abdomen.position.set(0, 1.85, -0.02);
   abdomen.scale.set(1.08, 1, 0.78);
   root.add(abdomen);
+  const abdomenGuard = createFurTuftShell(
+    materials.guardFur,
+    58,
+    new THREE.Vector3(0.55, 0.62, 0.42),
+    67,
+    'Mark guard coat | abdomen',
+  );
+  abdomenGuard.position.set(0, 1.85, -0.02);
+  root.add(abdomenGuard);
 
   const torso = new THREE.Group();
   torso.position.y = 2.4;
@@ -66,13 +84,31 @@ export function createMark(): MarkRig {
     torso.add(lat);
   }
   addMarkArmor(torso, materials);
-  torso.add(createFurTuftShell(materials.shortFur, 86, new THREE.Vector3(0.69, 0.83, 0.53), 97));
+  torso.add(
+    createFurTuftShell(
+      materials.guardFur,
+      108,
+      new THREE.Vector3(0.69, 0.83, 0.53),
+      97,
+      'Mark guard coat | torso',
+    ),
+  );
   root.add(torso);
 
   const neck = makeMesh(new THREE.CapsuleGeometry(0.32, 0.48, 10, 20), materials.darkFur);
   neck.position.set(0, 3.04, 0.03);
   neck.rotation.x = -0.18;
   root.add(neck);
+  const neckGuard = createFurTuftShell(
+    materials.guardFur,
+    38,
+    new THREE.Vector3(0.34, 0.42, 0.31),
+    113,
+    'Mark guard coat | neck',
+    0.045,
+  );
+  neckGuard.position.set(0, 3.04, 0.03);
+  root.add(neckGuard);
 
   const head = new THREE.Group();
   head.position.set(0, 3.42, -0.22);
@@ -86,19 +122,19 @@ export function createMark(): MarkRig {
   const cheekRight = cheekLeft.clone();
   cheekRight.position.x = 0.24;
   head.add(cheekRight);
-  const muzzle = makeMesh(new THREE.CapsuleGeometry(0.255, 0.5, 8, 22), materials.fur);
+  const muzzle = makeMesh(new THREE.CapsuleGeometry(0.255, 0.62, 8, 22), materials.fur);
   muzzle.rotation.x = Math.PI / 2;
-  muzzle.position.set(0, -0.15, -0.52);
+  muzzle.position.set(0, -0.15, -0.58);
   muzzle.scale.set(0.92, 1, 0.74);
   head.add(muzzle);
   const nose = makeMesh(new THREE.SphereGeometry(0.24, 24, 16), materials.skin);
   nose.scale.set(0.9, 0.6, 0.43);
-  nose.position.set(0, -0.16, -0.79);
+  nose.position.set(0, -0.16, -0.91);
   head.add(nose);
   for (const side of [-1, 1]) {
     const nostril = makeMesh(new THREE.SphereGeometry(0.037, 10, 7), materials.cloth);
     nostril.scale.set(1.2, 0.55, 0.45);
-    nostril.position.set(side * 0.12, -0.1, -0.89);
+    nostril.position.set(side * 0.12, -0.1, -1.01);
     head.add(nostril);
     const eye = makeMesh(new THREE.SphereGeometry(0.062, 16, 12), materials.eye);
     eye.position.set(side * 0.31, 0.055, -0.315);
@@ -118,6 +154,7 @@ export function createMark(): MarkRig {
     innerEar.rotation.x = -0.07;
     head.add(innerEar);
   }
+  head.add(createMarkBlindfold(materials));
   const browBand = makeMesh(
     new THREE.TorusGeometry(0.385, 0.052, 10, 42, Math.PI),
     materials.leather,
@@ -143,14 +180,27 @@ export function createMark(): MarkRig {
   horn.rotation.x = -Math.PI / 2;
   horn.position.set(0, 0.38, -0.53);
   head.add(horn);
+  const hornFerrule = makeMesh(new THREE.TorusGeometry(0.142, 0.026, 8, 28), materials.bronze);
+  hornFerrule.position.set(0, 0.38, -0.51);
+  hornFerrule.rotation.x = Math.PI / 2;
+  head.add(hornFerrule);
   for (let ringIndex = 0; ringIndex < 7; ringIndex += 1) {
     const radius = 0.118 * (1 - ringIndex / 8.5);
-    const spiral = makeMesh(new THREE.TorusGeometry(radius, 0.012, 6, 22), materials.armorEdge);
+    const spiral = makeMesh(new THREE.TorusGeometry(radius, 0.012, 6, 22), materials.hornGroove);
     spiral.position.set(0, 0.38 + ringIndex * 0.015, -0.6 - ringIndex * 0.105);
     spiral.rotation.x = Math.PI / 2;
     head.add(spiral);
   }
-  head.add(createFurTuftShell(materials.shortFur, 42, new THREE.Vector3(0.43, 0.5, 0.43), 151));
+  head.add(
+    createFurTuftShell(
+      materials.guardFur,
+      58,
+      new THREE.Vector3(0.43, 0.5, 0.43),
+      151,
+      'Mark guard coat | head',
+      0.048,
+    ),
+  );
   root.add(head);
 
   const mane: THREE.Object3D[] = [];
@@ -343,6 +393,72 @@ function createCarbine(
   return group;
 }
 
+function createMarkBlindfold(materials: MarkMaterials): THREE.Group {
+  const blindfold = new THREE.Group();
+  blindfold.name = 'Mark-blindfold';
+
+  for (const [bandIndex, verticalOffset] of [-0.056, 0, 0.056].entries()) {
+    const wrap = createCable(
+      [
+        new THREE.Vector3(-0.4, 0.065 + verticalOffset, -0.31),
+        new THREE.Vector3(-0.19, 0.075 + verticalOffset + (bandIndex % 2) * 0.008, -0.405),
+        new THREE.Vector3(0.02, 0.06 + verticalOffset, -0.445),
+        new THREE.Vector3(0.21, 0.076 + verticalOffset - (bandIndex % 2) * 0.008, -0.4),
+        new THREE.Vector3(0.4, 0.065 + verticalOffset, -0.3),
+      ],
+      0.034,
+      materials.cloth,
+    );
+    wrap.name = 'blindfold-woven-wrap';
+    wrap.castShadow = false;
+    blindfold.add(wrap);
+  }
+  for (const verticalOffset of [-0.086, 0.086]) {
+    const binding = createCable(
+      [
+        new THREE.Vector3(-0.38, 0.065 + verticalOffset, -0.31),
+        new THREE.Vector3(0, 0.072 + verticalOffset, -0.437),
+        new THREE.Vector3(0.38, 0.065 + verticalOffset, -0.3),
+      ],
+      0.012,
+      materials.leather,
+    );
+    binding.name = 'blindfold-braided-binding';
+    binding.castShadow = false;
+    blindfold.add(binding);
+  }
+
+  const knot = makeMesh(new THREE.IcosahedronGeometry(0.075, 1), materials.leather);
+  knot.name = 'blindfold-knot';
+  knot.position.set(-0.24, 0.06, 0.37);
+  knot.scale.set(1.2, 0.82, 0.72);
+  blindfold.add(knot);
+
+  const tailPaths = [
+    [
+      new THREE.Vector3(-0.25, 0.06, 0.38),
+      new THREE.Vector3(-0.43, -0.02, 0.52),
+      new THREE.Vector3(-0.55, -0.2, 0.7),
+      new THREE.Vector3(-0.48, -0.45, 0.84),
+    ],
+    [
+      new THREE.Vector3(-0.2, 0.04, 0.37),
+      new THREE.Vector3(-0.08, -0.1, 0.58),
+      new THREE.Vector3(-0.17, -0.32, 0.75),
+      new THREE.Vector3(-0.05, -0.57, 0.9),
+    ],
+  ];
+  tailPaths.forEach((points, index) => {
+    const tail = createCable(points, index === 0 ? 0.034 : 0.027, materials.cloth);
+    tail.name = 'blindfold-trailing-wrap';
+    tail.scale.x = index === 0 ? 1.18 : 0.9;
+    tail.castShadow = false;
+    blindfold.add(tail);
+  });
+
+  return blindfold;
+}
+
 function addMarkArmor(torso: THREE.Group, materials: MarkMaterials): void {
   const backPlate = makeMesh(createArmorPlateGeometry(0.82, 1.12, 0.13), materials.armor);
   backPlate.position.set(0, 0.08, 0.57);
@@ -376,6 +492,35 @@ function addMarkArmor(torso: THREE.Group, materials: MarkMaterials): void {
       'backplate-fasteners',
     ),
   );
+  torso.add(
+    createInstancedDetail(
+      createBeveledBox(0.3, 0.018, 0.024, 0.006),
+      materials.armorWear,
+      [
+        {
+          position: new THREE.Vector3(-0.14, 0.34, 0.81),
+          rotation: new THREE.Euler(0, 0, -0.44),
+          scale: new THREE.Vector3(1.1, 1, 1),
+        },
+        {
+          position: new THREE.Vector3(0.11, 0.08, 0.82),
+          rotation: new THREE.Euler(0, 0, 0.31),
+          scale: new THREE.Vector3(0.72, 1, 1),
+        },
+        {
+          position: new THREE.Vector3(-0.08, -0.23, 0.8),
+          rotation: new THREE.Euler(0, 0, -0.18),
+          scale: new THREE.Vector3(0.86, 1, 1),
+        },
+        {
+          position: new THREE.Vector3(0.13, -0.42, 0.78),
+          rotation: new THREE.Euler(0, 0, 0.48),
+          scale: new THREE.Vector3(0.56, 1, 1),
+        },
+      ],
+      'Mark-armor-abrasion-inlays',
+    ),
+  );
   for (const side of [-1, 1]) {
     const strap = makeMesh(createBeveledBox(0.13, 1.38, 0.055, 0.025), materials.leather);
     strap.position.set(side * 0.3, 0.04, 0.72);
@@ -396,6 +541,31 @@ function addMarkArmor(torso: THREE.Group, materials: MarkMaterials): void {
     shoulderLip.position.set(side * 0.6, 0.47, 0.22);
     shoulderLip.rotation.set(Math.PI / 2, 0, side < 0 ? Math.PI * 0.18 : Math.PI * 0.82);
     torso.add(shoulderLip);
+    for (let layerIndex = 0; layerIndex < 2; layerIndex += 1) {
+      const scalePlate = makeMesh(
+        createArmorPlateGeometry(0.36 - layerIndex * 0.06, 0.28, 0.07),
+        layerIndex === 0 ? materials.armorEdge : materials.armorWear,
+      );
+      scalePlate.position.set(
+        side * (0.66 + layerIndex * 0.025),
+        0.29 - layerIndex * 0.16,
+        0.21 + layerIndex * 0.035,
+      );
+      scalePlate.rotation.set(Math.PI / 2 - 0.18, side * -0.22, side * -0.09);
+      torso.add(scalePlate);
+    }
+    if (side < 0) {
+      for (let spikeIndex = 0; spikeIndex < 3; spikeIndex += 1) {
+        const spike = makeMesh(
+          new THREE.ConeGeometry(0.045 - spikeIndex * 0.006, 0.27 - spikeIndex * 0.035, 7, 2),
+          materials.armorWear,
+        );
+        spike.name = 'Mark-asymmetric-shoulder-stud';
+        spike.position.set(-0.72 - spikeIndex * 0.015, 0.54 - spikeIndex * 0.11, 0.21);
+        spike.rotation.z = Math.PI / 2 + 0.18 + spikeIndex * 0.08;
+        torso.add(spike);
+      }
+    }
   }
   const collar = makeMesh(
     new THREE.TorusGeometry(0.49, 0.075, 10, 40, Math.PI * 1.45),
@@ -418,7 +588,7 @@ function addMarkArmor(torso: THREE.Group, materials: MarkMaterials): void {
 
 function addMane(root: THREE.Group, materials: MarkMaterials, mane: THREE.Object3D[]): void {
   const maneLocks: THREE.BufferGeometry[] = [];
-  for (let index = 0; index < 22; index += 1) {
+  for (let index = 0; index < 28; index += 1) {
     const side = index % 2 === 0 ? -1 : 1;
     const row = Math.floor(index / 2);
     const origin = new THREE.Vector3(
@@ -433,7 +603,7 @@ function addMane(root: THREE.Group, materials: MarkMaterials, mane: THREE.Object
       origin.clone().add(new THREE.Vector3(side * (0.06 + (row % 2) * 0.1), -length * 0.68, 0.18)),
       origin.clone().add(new THREE.Vector3(side * 0.16, -length, 0.23)),
     ]);
-    maneLocks.push(new THREE.TubeGeometry(curve, 12, 0.055 + (index % 4) * 0.008, 6, false));
+    maneLocks.push(new THREE.TubeGeometry(curve, 12, 0.037 + (index % 4) * 0.006, 6, false));
   }
   const mergedMane = mergeGeometries(maneLocks, false);
   if (mergedMane) {
@@ -443,9 +613,39 @@ function addMane(root: THREE.Group, materials: MarkMaterials, mane: THREE.Object
     root.add(maneMesh);
     mane.push(maneMesh);
   }
+  const maneFlyaways: THREE.BufferGeometry[] = [];
+  for (let index = 0; index < 18; index += 1) {
+    const side = index % 2 === 0 ? -1 : 1;
+    const row = Math.floor(index / 2);
+    const origin = new THREE.Vector3(
+      side * (0.08 + (row % 3) * 0.045),
+      3.77 - row * 0.18,
+      0.04 + row * 0.062,
+    );
+    const length = 0.58 + row * 0.07 + hashUnit(index, 317) * 0.16;
+    const outward = side * (0.15 + hashUnit(index * 3, 331) * 0.18);
+    const curve = new THREE.CatmullRomCurve3([
+      origin,
+      origin.clone().add(new THREE.Vector3(outward * 0.62, -length * 0.28, 0.08)),
+      origin.clone().add(new THREE.Vector3(-outward * 0.18, -length * 0.66, 0.2)),
+      origin.clone().add(new THREE.Vector3(outward, -length, 0.3)),
+    ]);
+    maneFlyaways.push(
+      new THREE.TubeGeometry(curve, 9, 0.006 + hashUnit(index, 347) * 0.004, 5, false),
+    );
+  }
+  const mergedFlyaways = mergeGeometries(maneFlyaways, false);
+  if (mergedFlyaways) {
+    const flyawayMesh = makeMesh(mergedFlyaways, materials.maneEdge);
+    flyawayMesh.name = 'Mark-mane-flyaways';
+    flyawayMesh.userData.noBatch = true;
+    flyawayMesh.castShadow = false;
+    root.add(flyawayMesh);
+    mane.push(flyawayMesh);
+  }
   const tailLocks: THREE.BufferGeometry[] = [];
-  for (let index = 0; index < 11; index += 1) {
-    const side = (index - 5) / 5;
+  for (let index = 0; index < 15; index += 1) {
+    const side = (index - 7) / 7;
     const origin = new THREE.Vector3(side * 0.14, 1.43 - Math.abs(side) * 0.06, 0.63);
     const curve = new THREE.CatmullRomCurve3([
       origin,
@@ -453,7 +653,7 @@ function addMane(root: THREE.Group, materials: MarkMaterials, mane: THREE.Object
       origin.clone().add(new THREE.Vector3(side * 0.3, -0.48, 0.56)),
       origin.clone().add(new THREE.Vector3(side * 0.42, -0.76 - Math.abs(side) * 0.15, 0.65)),
     ]);
-    tailLocks.push(new THREE.TubeGeometry(curve, 14, 0.075 + (index % 3) * 0.012, 7, false));
+    tailLocks.push(new THREE.TubeGeometry(curve, 14, 0.045 + (index % 3) * 0.007, 7, false));
   }
   const mergedTail = mergeGeometries(tailLocks, false);
   if (mergedTail) {
@@ -462,6 +662,29 @@ function addMane(root: THREE.Group, materials: MarkMaterials, mane: THREE.Object
     tailMesh.userData.noBatch = true;
     root.add(tailMesh);
     mane.push(tailMesh);
+  }
+  const tailFlyaways: THREE.BufferGeometry[] = [];
+  for (let index = 0; index < 9; index += 1) {
+    const side = (index - 4) / 4;
+    const origin = new THREE.Vector3(side * 0.12, 1.45, 0.66);
+    const curve = new THREE.CatmullRomCurve3([
+      origin,
+      origin.clone().add(new THREE.Vector3(side * 0.28, -0.2, 0.34)),
+      origin.clone().add(new THREE.Vector3(-side * 0.12, -0.57, 0.64)),
+      origin.clone().add(new THREE.Vector3(side * 0.55, -0.94, 0.78)),
+    ]);
+    tailFlyaways.push(
+      new THREE.TubeGeometry(curve, 10, 0.007 + hashUnit(index, 373) * 0.004, 5, false),
+    );
+  }
+  const mergedTailFlyaways = mergeGeometries(tailFlyaways, false);
+  if (mergedTailFlyaways) {
+    const tailFlyawayMesh = makeMesh(mergedTailFlyaways, materials.maneEdge);
+    tailFlyawayMesh.name = 'Mark-tail-flyaways';
+    tailFlyawayMesh.userData.noBatch = true;
+    tailFlyawayMesh.castShadow = false;
+    root.add(tailFlyawayMesh);
+    mane.push(tailFlyawayMesh);
   }
 }
 
@@ -510,10 +733,12 @@ function createMarkArm(side: number, materials: MarkMaterials): THREE.Group {
   hand.position.set(side * -0.05, -1.34, -0.38);
   shoulder.add(hand);
   const tufts = createFurTuftShell(
-    materials.fur,
-    26,
+    materials.guardFur,
+    38,
     new THREE.Vector3(0.24, 0.67, 0.24),
     side < 0 ? 211 : 223,
+    side < 0 ? 'Mark guard coat | left arm' : 'Mark guard coat | right arm',
+    0.048,
   );
   tufts.position.y = -0.55;
   shoulder.add(tufts);
@@ -548,6 +773,16 @@ function createMarkLeg(side: number, materials: MarkMaterials): THREE.Group {
   const pouch = makeMesh(createBeveledBox(0.25, 0.32, 0.16, 0.035), materials.leather);
   pouch.position.set(side * 0.29, -0.2, 0.11);
   hip.add(pouch);
+  const legTufts = createFurTuftShell(
+    materials.guardFur,
+    52,
+    new THREE.Vector3(0.31, 0.76, 0.28),
+    side < 0 ? 251 : 269,
+    side < 0 ? 'Mark guard coat | left leg' : 'Mark guard coat | right leg',
+    0.052,
+  );
+  legTufts.position.y = -0.74;
+  hip.add(legTufts);
   return hip;
 }
 
@@ -564,6 +799,17 @@ function addFirstPersonHands(group: THREE.Group, weaponMaterials: WeaponMaterial
     const forearm = makeMesh(new THREE.CapsuleGeometry(0.13, 0.52, 8, 18), markMaterials.fur);
     forearm.position.y = -0.28;
     arm.add(forearm);
+    const guardHairs = createFurTuftShell(
+      markMaterials.guardFur,
+      24,
+      new THREE.Vector3(0.145, 0.4, 0.145),
+      index === 0 ? 401 : 419,
+      index === 0 ? 'Mark first-person guard coat | left' : 'Mark first-person guard coat | right',
+      0.04,
+      0.008,
+    );
+    guardHairs.position.y = -0.28;
+    arm.add(guardHairs);
     const bracer = makeMesh(
       new THREE.CylinderGeometry(0.15, 0.13, 0.24, 16),
       weaponMaterials.leather,
@@ -1635,17 +1881,22 @@ function createFurTuftShell(
   count: number,
   radii: THREE.Vector3,
   seed: number,
+  name = 'fur-silhouette',
+  length = 0.048,
+  thickness = 0.008,
 ): THREE.InstancedMesh {
-  const geometry = new THREE.CapsuleGeometry(0.012, 0.045, 2, 5);
-  geometry.translate(0, 0.035, 0);
+  const geometry = new THREE.ConeGeometry(thickness, length, 5, 2);
+  geometry.translate(0, length * 0.5, 0);
   const instanced = new THREE.InstancedMesh(geometry, material, count);
-  instanced.name = 'fur-silhouette';
+  instanced.name = name;
   instanced.castShadow = false;
   const matrix = new THREE.Matrix4();
   const quaternion = new THREE.Quaternion();
   const position = new THREE.Vector3();
   const normal = new THREE.Vector3();
+  const fiberDirection = new THREE.Vector3();
   const scale = new THREE.Vector3();
+  const color = new THREE.Color();
   const up = new THREE.Vector3(0, 1, 0);
   for (let index = 0; index < count; index += 1) {
     const v = 1 - (2 * (index + 0.5)) / count;
@@ -1654,14 +1905,25 @@ function createFurTuftShell(
     normal.set(Math.cos(angle) * radial, v, Math.sin(angle) * radial).normalize();
     const jitter = 0.92 + hashUnit(index, seed) * 0.15;
     position.set(normal.x * radii.x, normal.y * radii.y, normal.z * radii.z);
-    position.multiplyScalar(jitter).addScaledVector(normal, 0.012);
-    quaternion.setFromUnitVectors(up, normal);
+    position.multiplyScalar(jitter).addScaledVector(normal, 0.004);
+    fiberDirection.copy(normal);
+    fiberDirection.y -= 0.42;
+    fiberDirection.normalize();
+    quaternion.setFromUnitVectors(up, fiberDirection);
     const tuftScale = 0.56 + hashUnit(index * 3, seed + 9) * 0.56;
-    scale.set(tuftScale, tuftScale * (0.8 + hashUnit(index * 7, seed) * 0.35), tuftScale);
+    scale.set(
+      tuftScale * (0.82 + hashUnit(index * 11, seed + 3) * 0.3),
+      tuftScale * (0.82 + hashUnit(index * 7, seed) * 0.38),
+      tuftScale * (0.82 + hashUnit(index * 13, seed + 5) * 0.3),
+    );
     matrix.compose(position, quaternion, scale);
     instanced.setMatrixAt(index, matrix);
+    const shade = 0.68 + hashUnit(index * 17, seed + 23) * 0.18;
+    color.setRGB(shade * 0.96, shade * 0.91, shade * 1.02);
+    instanced.setColorAt(index, color);
   }
   instanced.instanceMatrix.needsUpdate = true;
+  if (instanced.instanceColor) instanced.instanceColor.needsUpdate = true;
   return instanced;
 }
 

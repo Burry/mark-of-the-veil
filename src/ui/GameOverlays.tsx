@@ -2,14 +2,20 @@ import type { BestRun, GameSnapshot, RunStats, UpgradeId } from '../game/types/G
 import { CarrotIcon, OverdriveIcon, PulseIcon, ResolveIcon, SigilIcon } from './Icons';
 import { Frame, MenuButton } from './Frame';
 
-export function LoadingScreen({ progress }: { progress: number }) {
+export function LoadingScreen({
+  progress,
+  chapterTitle,
+}: {
+  progress: number;
+  chapterTitle?: string;
+}) {
   const percentage = Math.min(100, Math.max(0, Math.round(progress * 100)));
   const status =
     percentage < 35
-      ? 'DESCENDING BENEATH VESPERA'
+      ? 'PREPARING CHAPTER'
       : percentage < 75
-        ? 'AWAKENING THE ROOT VAULT'
-        : 'SYNCHRONIZING THE VEIL';
+        ? 'ASSEMBLING THE VEIL'
+        : 'SYNCHRONIZING COMBAT SYSTEMS';
   return (
     <main className="loading-screen screen-layer" aria-live="polite" aria-busy="true">
       <div className="loading-sigil" aria-hidden="true">
@@ -17,7 +23,7 @@ export function LoadingScreen({ progress }: { progress: number }) {
         <span />
         <i />
       </div>
-      <h2>{status}</h2>
+      <h2>{chapterTitle ? `${status} // ${chapterTitle}` : status}</h2>
       <div
         className="loading-track"
         role="progressbar"
@@ -178,7 +184,7 @@ export function ResultScreen({ victory, stats, bestRun, onReplay, onTitle }: Res
         )}
         <div className="panel-actions panel-actions--center">
           <MenuButton onClick={onReplay} primary autoFocus>
-            {victory ? 'DESCEND AGAIN' : 'RISE AGAIN'}
+            {victory ? 'ENTER CHOIR MEMORY' : 'RISE AGAIN'}
           </MenuButton>
           <MenuButton onClick={onTitle}>RETURN TO TITLE</MenuButton>
         </div>

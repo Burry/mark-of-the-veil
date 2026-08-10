@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { getChapter, type CampaignChapter } from './campaign';
 import { AudioDirector, HapticsDirector } from './audio';
 import { InputController, type InputFrame } from './input/InputController';
 import {
@@ -8,10 +9,23 @@ import {
   setSealState,
   type MarkRig,
 } from './render/ActorFactory';
-import { animateArena, applyArenaFlashProfile, createArena, type ArenaRig } from './render/Arena';
+import {
+  animateArena,
+  applyArenaCinematicLook,
+  applyArenaFlashProfile,
+  createArena,
+  type ArenaRig,
+} from './render/Arena';
+import { animateBossVariant, applyBossVariant } from './render/BossVariants';
+import { selectCinematicLook } from './render/CinematicLook';
 import { CinematicRenderPipeline } from './render/CinematicRenderPipeline';
+import { CHAPTER_VISUALS, type ChapterEnvironmentId } from './render/ChapterScenery';
 import { EffectsDirector } from './render/EffectsDirector';
-import { EncounterDirector, type EncounterEvent } from './systems/EncounterDirector';
+import {
+  CHAPTER_ENCOUNTERS,
+  ChapterDirector,
+  type ChapterEncounterEvent,
+} from './systems/ChapterDirector';
 import { EnemySystem } from './systems/EnemySystem';
 import type { EnemyDamageResult, EnemyKind } from './systems/WorldTypes';
 import type {
@@ -22,6 +36,10 @@ import type {
   RuntimeOptions,
   UpgradeId,
 } from './types/GameTypes';
+import {
+  installRuntimeCompletionIntegrationBridge,
+  isRuntimeDiagnosticsEnabled,
+} from './runtimeDiagnostics';
 import { SeededRandom } from './utils/SeededRandom';
 import { clamp, circlePushOut, damp, dampVector, disposeObject, saturate } from './utils/math';
 
@@ -47,7 +65,6 @@ const BASE_TUNING: UpgradeTuning = {
 
 const MAGAZINE_SIZE = 36;
 const PLAYER_RADIUS = 0.72;
-const ARENA_RADIUS = 39.5;
 
 export class GameRuntime implements GameRuntimePort {
   private settings: GameSettings;
@@ -55,7 +72,7 @@ export class GameRuntime implements GameRuntimePort {
   private readonly seed: number;
   private readonly random: SeededRandom;
   private readonly diagnosticsEnabled =
-    typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('diagnostics');
+    typeof window !== 'undefined' && isRuntimeDiagnosticsEnabled(window.location.search);
   private readonly scene = new THREE.Scene();
   private readonly camera = new THREE.PerspectiveCamera(68, 16 / 9, 0.06, 130);
   private readonly audio: AudioDirector;
@@ -68,11 +85,12 @@ export class GameRuntime implements GameRuntimePort {
   private firstPersonWeapon: ReturnType<typeof createFirstPersonWeapon> | null = null;
   private effects: EffectsDirector | null = null;
   private enemies: EnemySystem | null = null;
-  private encounter: EncounterDirector | null = null;
+  private encounter: ChapterDirector | null = null;
   private resizeObserver: ResizeObserver | null = null;
   private animationFrame = 0;
   private started = false;
   private disposed = false;
+  private removeRuntimeCompletionIntegrationBridge: (() => void) | null = null;
   private paused = true;
   private runEnded = false;
   private hasCapturedPointer = false;
@@ -120,13 +138,18 @@ export class GameRuntime implements GameRuntimePort {
   private shotsFired = 0;
   private shotsHit = 0;
   private damageTaken = 0;
+  private readonly chapterId: ChapterEnvironmentId;
+  private readonly chapter: CampaignChapter;
 
   constructor(private readonly options: RuntimeOptions) {
+    this.chapterId = resolveChapterId(options.chapterId);
+    this.chapter = getChapter(this.chapterId);
     this.settings = { ...options.settings };
     this.callbacks = options.callbacks;
     this.seed = options.seed ?? Math.floor(Math.random() * 0xffff_ffff);
     this.random = new SeededRandom(this.seed);
     this.audio = new AudioDirector(() => this.settings);
+    this.audio.setChapter(this.chapterId);
     this.haptics = new HapticsDirector(() => this.settings);
   }
 
@@ -149,9 +172,14 @@ export class GameRuntime implements GameRuntimePort {
       precision: 'highp',
       powerPreference: 'high-performance',
     });
+    this.options.canvas.dataset.engine = `three.js r${THREE.REVISION}`;
+    this.options.canvas.dataset.renderApi = 'webgl2';
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 0.96;
+    this.renderer.toneMappingExposure = selectCinematicLook(
+      this.chapterId,
+      this.settings.reducedFlashes,
+    ).exposure;
     this.renderer.shadowMap.enabled = this.settings.quality !== 'low';
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.setClearColor(0x05070c, 1);
@@ -168,7 +196,15 @@ export class GameRuntime implements GameRuntimePort {
       this.settings.quality,
       this.settings.reducedFlashes,
     );
-    const arena = await createArena(this.scene, this.renderer, this.settings.quality, this.random);
+    const arena = await createArena(
+      this.scene,
+      this.renderer,
+      this.settings.quality,
+      this.random,
+      this.chapterId,
+      this.settings.reducedFlashes,
+      this.diagnosticsEnabled,
+    );
     if (this.disposed) {
       this.disposeArena(arena);
       return;
@@ -180,10 +216,18 @@ export class GameRuntime implements GameRuntimePort {
     this.scene.add(this.mark.root);
     this.firstPersonWeapon = createFirstPersonWeapon();
     this.camera.add(this.firstPersonWeapon.root);
-    this.enemies = new EnemySystem(this.scene, this.effects, this.options.difficulty, this.random);
-    this.encounter = new EncounterDirector(
+    this.enemies = new EnemySystem(
+      this.scene,
+      this.effects,
+      this.options.difficulty,
+      this.random,
+      this.arena.obstacles,
+      this.arena.playRadius,
+    );
+    this.encounter = new ChapterDirector(
+      CHAPTER_ENCOUNTERS[this.chapterId],
       this.arena.seals.map((seal) => seal.root.position.clone()),
-      this.arena.carrot.position.clone().setY(0),
+      this.arena.recovery.position.clone().setY(0),
       this.arena.extraction.root.position.clone().setY(0),
     );
     this.input = new InputController(this.options.canvas, () => this.settings, {
@@ -195,6 +239,7 @@ export class GameRuntime implements GameRuntimePort {
       this.scene,
       this.camera,
       this.settings,
+      this.chapterId,
     );
 
     this.resizeObserver = new ResizeObserver(this.resize);
@@ -207,6 +252,10 @@ export class GameRuntime implements GameRuntimePort {
 
     this.started = true;
     this.resetRun();
+    this.removeRuntimeCompletionIntegrationBridge = installRuntimeCompletionIntegrationBridge(
+      this.diagnosticsEnabled,
+      this.completeChapterThroughIntegrationBridge,
+    );
     this.paused = false;
     this.lastFrameTime = performance.now();
     this.resize();
@@ -267,16 +316,31 @@ export class GameRuntime implements GameRuntimePort {
       this.pulseCooldown = 0;
     }
     this.arena.extraction.root.visible = false;
-    const boss = this.enemies.spawn('regent', new THREE.Vector3(0, 0, -1));
+    const boss = this.enemies.spawn('regent', this.arena.bossPosition);
+    const bossScale =
+      this.chapterId === 'the-root-choir'
+        ? 1.24
+        : this.chapterId === 'crown-of-eidolon'
+          ? 1.18
+          : this.chapterId === 'ashes-of-home'
+            ? 0.88
+            : 1;
+    boss.rig.root.scale.setScalar(bossScale);
+    applyBossVariant(boss.rig.root, this.chapterId, this.arena.profile.accentColor);
+    boss.rig.glowMaterials.forEach((material) => {
+      material.color.setHex(this.arena?.profile.accentColor ?? 0xff3d27);
+      material.emissive.setHex(this.arena?.profile.accentColor ?? 0xff3d27);
+    });
     this.paused = false;
     this.lastFrameTime = performance.now();
     void this.audio.resume().then(() => this.audio.play('boss', boss.rig.root.position));
     this.haptics.resume();
     this.haptics.play('boss', 1, this.input?.getGamepad() ?? undefined);
-    this.setCaption('THE HOLLOW REGENT: Crown made hungry.', 3.8);
+    this.setCaption(this.encounter.script.bossArrivalCaption, 4.2);
     this.callbacks.publish({
       selectedUpgrade: id,
-      bossName: 'HOLLOW REGENT',
+      bossName: this.chapter.boss.name,
+      bossSubtitle: this.chapter.boss.subtitle,
       bossHealth: boss.health,
       bossMaxHealth: boss.maxHealth,
       magazineSize: this.magazineSize,
@@ -294,6 +358,7 @@ export class GameRuntime implements GameRuntimePort {
     this.haptics.updateSettings(this.settings);
     this.effects?.setReducedFlashes(this.settings.reducedFlashes);
     if (this.arena) {
+      applyArenaCinematicLook(this.arena, this.settings.reducedFlashes);
       applyArenaFlashProfile(this.arena, this.worldTime, this.settings.reducedFlashes);
     }
     this.configureRenderer();
@@ -309,6 +374,8 @@ export class GameRuntime implements GameRuntimePort {
     if (this.disposed) return;
     this.disposed = true;
     this.started = false;
+    this.removeRuntimeCompletionIntegrationBridge?.();
+    this.removeRuntimeCompletionIntegrationBridge = null;
     cancelAnimationFrame(this.animationFrame);
     this.resizeObserver?.disconnect();
     this.resizeObserver = null;
@@ -347,6 +414,7 @@ export class GameRuntime implements GameRuntimePort {
   }
 
   private disposeArena(arena: ArenaRig): void {
+    arena.removeRenderDiagnostics();
     const sceneLights = arena.root.userData.sceneLights as THREE.Light[] | undefined;
     sceneLights?.forEach((light) => light.removeFromParent());
     arena.root.removeFromParent();
@@ -366,7 +434,7 @@ export class GameRuntime implements GameRuntimePort {
     this.worldTime = 0;
     this.runTime = 0;
     this.snapshotTime = 0;
-    this.playerPosition.set(0, 0, 16.5);
+    this.playerPosition.copy(this.arena.playerStart);
     this.playerVelocity.set(0, 0, 0);
     this.yaw = 0;
     this.pitch = -0.04;
@@ -399,15 +467,22 @@ export class GameRuntime implements GameRuntimePort {
     this.shotsFired = 0;
     this.shotsHit = 0;
     this.damageTaken = 0;
-    this.arena.carrot.visible = true;
+    this.arena.recovery.visible = true;
     this.arena.extraction.root.visible = false;
     this.arena.seals.forEach((seal) => setSealState(seal, 'dormant'));
     this.mark.root.position.copy(this.playerPosition);
     this.mark.root.rotation.set(0, this.yaw, 0);
-    this.camera.position.set(1.32, 3.56, 21.75);
+    this.camera.position.copy(this.playerPosition).add(new THREE.Vector3(1.32, 3.56, 5.25));
     this.camera.quaternion.setFromEuler(_viewEuler.set(this.pitch, this.yaw, 0, 'YXZ'));
     this.firstPersonWeapon.root.visible = false;
-    this.setCaption('Mark wakes beneath Vespera. The carrot is still here.', 4.5);
+    this.setCaption(this.encounter.script.startCaption, 4.8);
+    this.callbacks.publish({
+      chapterId: this.chapterId,
+      chapterTitle: this.chapter.title,
+      chapterNumber: this.chapter.number,
+      objectiveUnit: this.chapterId === 'the-drowned-cathedral' ? 'SEALS' : 'OPERATIONS',
+      bossSubtitle: null,
+    });
     this.publishSnapshot(true);
   }
 
@@ -506,6 +581,7 @@ export class GameRuntime implements GameRuntimePort {
       this.playerPosition,
       this.invulnerableTimer > 0,
     );
+    if (this.enemies.boss) animateBossVariant(this.enemies.boss.rig.root, this.worldTime);
     enemyFrame.attacks.slice(0, 2).forEach((position) => this.audio.play('enemyAttack', position));
     if (enemyFrame.damage > 0)
       this.applyPlayerDamage(enemyFrame.damage, enemyFrame.damageOrigins[0]);
@@ -529,7 +605,13 @@ export class GameRuntime implements GameRuntimePort {
       this.health = Math.min(this.maxHealth, this.health + delta * 2.4);
     }
 
-    animateArena(this.arena, this.worldTime, delta, this.settings.reducedFlashes);
+    animateArena(
+      this.arena,
+      this.worldTime,
+      delta,
+      this.settings.reducedFlashes,
+      this.settings.reducedMotion,
+    );
     this.effects.update(delta);
     const boss = this.enemies.boss;
     const intensity = boss
@@ -590,9 +672,10 @@ export class GameRuntime implements GameRuntimePort {
     }
     this.playerPosition.addScaledVector(this.playerVelocity, delta);
     const radialDistance = Math.hypot(this.playerPosition.x, this.playerPosition.z);
-    if (radialDistance > ARENA_RADIUS) {
-      this.playerPosition.x *= ARENA_RADIUS / radialDistance;
-      this.playerPosition.z *= ARENA_RADIUS / radialDistance;
+    const playRadius = this.arena?.playRadius ?? 39.5;
+    if (radialDistance > playRadius) {
+      this.playerPosition.x *= playRadius / radialDistance;
+      this.playerPosition.z *= playRadius / radialDistance;
     }
     this.arena?.obstacles.forEach((obstacle) =>
       circlePushOut(this.playerPosition, obstacle.center, obstacle.radius + PLAYER_RADIUS),
@@ -779,35 +862,38 @@ export class GameRuntime implements GameRuntimePort {
     if (this.health <= 0) this.endRun(false);
   }
 
-  private handleEncounterEvent(event: EncounterEvent): void {
+  private handleEncounterEvent(event: ChapterEncounterEvent): void {
     if (!this.arena || !this.enemies || !this.encounter || !this.effects) return;
-    if (event.type === 'carrot') {
-      this.arena.carrot.visible = false;
+    if (event.type === 'recover') {
+      this.arena.recovery.visible = false;
       setSealState(this.arena.seals[0], 'active');
       this.score += 250;
       this.audio.play('ui', this.playerPosition);
       this.haptics.play('ui', 0.42, this.input?.getGamepad() ?? undefined);
-      this.setCaption('“Never doubted you, little orange copilot.”', 3.2);
+      this.setCaption(event.caption, 3.8);
     } else if (event.type === 'wave') {
       const seal = this.arena.seals[event.index];
       setSealState(seal, 'active');
-      this.enemies.spawnWave(event.enemies, seal.root.position, 7.5);
-      this.effects.pulse(seal.root.position, 8.5, 0xff5d36, 0.8);
+      this.enemies.spawnWave(event.beat.enemies, seal.root.position, 7.5);
+      this.effects.pulse(seal.root.position, 8.5, this.arena.profile.accentColor, 0.8);
       this.audio.play('seal', seal.root.position);
-      const enemyName =
-        event.index === 0 ? 'CHAINLINGS' : event.index === 1 ? 'NEEDLEWINGS' : 'CROWN HEAVIES';
-      this.setCaption(`${enemyName} breach the seal lattice.`, 2.8);
-    } else if (event.type === 'seal') {
+      this.setCaption(event.beat.arrivalCaption, 3.4);
+    } else if (event.type === 'anchor') {
       setSealState(this.arena.seals[event.index], 'broken');
       this.score += Math.round(800 * this.multiplier);
       this.shield = this.maxShield;
       this.health = Math.min(this.maxHealth, this.health + 18);
       this.audio.play('seal', this.arena.seals[event.index].root.position);
       this.haptics.play('seal', 0.85, this.input?.getGamepad() ?? undefined);
-      this.effects.pulse(this.arena.seals[event.index].root.position, 14, 0xffc29d, 1.1);
+      this.effects.pulse(
+        this.arena.seals[event.index].root.position,
+        14,
+        this.arena.profile.secondaryColor,
+        1.1,
+      );
       if (this.arena.seals[event.index + 1])
         setSealState(this.arena.seals[event.index + 1], 'active');
-      this.setCaption(`VEIL SEAL ${event.index + 1} BROKEN`, 2.5);
+      this.setCaption(event.caption, 3.2);
     } else if (event.type === 'upgrade') {
       this.paused = true;
       this.input?.exitPointerLock();
@@ -825,11 +911,16 @@ export class GameRuntime implements GameRuntimePort {
     this.encounter.bossDefeated();
     this.enemies.clear();
     this.arena.extraction.root.visible = true;
-    this.effects.pulse(this.arena.extraction.root.position, 16, 0x92ddff, 1.4);
+    this.effects.pulse(
+      this.arena.extraction.root.position,
+      16,
+      this.arena.profile.secondaryColor,
+      1.4,
+    );
     this.audio.play('boss', this.playerPosition);
     this.haptics.play('boss', 1, this.input?.getGamepad() ?? undefined);
-    this.setCaption('REGENT DOWN. Its root channel is exposed. Enter the Choir!', 3.2);
-    this.callbacks.publish({ bossName: null, bossHealth: 0, bossMaxHealth: 0 });
+    this.setCaption(this.encounter.script.bossDefeatCaption, 4.2);
+    this.callbacks.publish({ bossName: null, bossSubtitle: null, bossHealth: 0, bossMaxHealth: 0 });
   }
 
   private togglePerspective(): void {
@@ -838,6 +929,23 @@ export class GameRuntime implements GameRuntimePort {
     this.haptics.play('ui', 0.25, this.input?.getGamepad() ?? undefined);
     this.callbacks.publish({ perspective: this.perspective });
   }
+
+  private readonly completeChapterThroughIntegrationBridge = (): boolean => {
+    if (
+      !this.diagnosticsEnabled ||
+      !this.started ||
+      this.disposed ||
+      this.runEnded ||
+      !this.encounter
+    ) {
+      return false;
+    }
+
+    // This diagnostics-only integration bridge bypasses combat. It verifies the production
+    // GameRuntime -> GameHost victory boundary and must never be treated as combat simulation.
+    this.endRun(true);
+    return true;
+  };
 
   private endRun(victory: boolean): void {
     if (this.runEnded || !this.encounter) return;
@@ -902,11 +1010,12 @@ export class GameRuntime implements GameRuntimePort {
       perspective: this.perspective,
       objective: presentation.objective,
       objectiveDetail: presentation.detail,
-      seals: this.encounter.sealsBroken,
+      seals: this.encounter.anchorsCompleted,
       totalSeals: 3,
       enemiesRemaining:
         this.encounter.phase === 'boss' ? this.enemies.count : this.enemies.regularCount,
-      bossName: boss ? 'HOLLOW REGENT' : null,
+      bossName: boss ? this.chapter.boss.name : null,
+      bossSubtitle: boss ? this.chapter.boss.subtitle : null,
       bossHealth: boss?.health ?? 0,
       bossMaxHealth: boss?.maxHealth ?? 0,
       score: Math.round(this.score),
@@ -915,6 +1024,7 @@ export class GameRuntime implements GameRuntimePort {
       damageDirection: this.damageDirection,
       caption: this.settings.captions ? this.caption : null,
       interactPrompt: presentation.prompt,
+      tutorialHint: this.tutorialHint(),
       pointerLocked: this.input?.isPointerLocked() ?? false,
       selectedUpgrade: this.selectedUpgrade,
       fps: this.fps,
@@ -926,7 +1036,24 @@ export class GameRuntime implements GameRuntimePort {
     const cap = this.settings.quality === 'high' ? 2 : this.settings.quality === 'medium' ? 1.5 : 1;
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, cap));
     this.renderer.shadowMap.enabled = this.settings.quality !== 'low';
-    this.renderer.toneMappingExposure = this.settings.reducedFlashes ? 0.84 : 0.96;
+    this.renderer.toneMappingExposure = selectCinematicLook(
+      this.chapterId,
+      this.settings.reducedFlashes,
+    ).exposure;
+  }
+
+  private tutorialHint(): string | null {
+    if (this.chapterId !== 'ashes-of-home' || this.runTime > 24) return null;
+    const gamepad = this.input?.getGamepad();
+    if (this.runTime < 7) {
+      return gamepad ? 'LEFT STICK MOVE // RIGHT STICK LOOK' : 'WASD MOVE // MOUSE LOOK';
+    }
+    if (this.runTime < 14) {
+      return gamepad ? 'LT FOCUS // RT FIRE // X RELOAD' : 'RMB FOCUS // LMB FIRE // R RELOAD';
+    }
+    return gamepad
+      ? 'A DASH // LB HORN PULSE // Y SWITCH VIEW'
+      : 'SPACE DASH // Q HORN PULSE // V SWITCH VIEW';
   }
 
   private readonly resize = (): void => {
@@ -973,6 +1100,13 @@ export class GameRuntime implements GameRuntimePort {
     this.callbacks.publish({ caption: 'The WebGL device was lost. Reload to re-enter Vespera.' });
     this.callbacks.requestScreen('unsupported');
   };
+}
+
+function resolveChapterId(chapterId: string): ChapterEnvironmentId {
+  if (Object.prototype.hasOwnProperty.call(CHAPTER_VISUALS, chapterId)) {
+    return chapterId as ChapterEnvironmentId;
+  }
+  throw new Error(`Unknown campaign chapter: ${chapterId}`);
 }
 
 const _viewEuler = new THREE.Euler(0, 0, 0, 'YXZ');

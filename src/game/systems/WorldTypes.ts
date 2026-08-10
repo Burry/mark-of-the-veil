@@ -14,6 +14,7 @@ export interface EnemyActor {
   id: number;
   kind: EnemyKind;
   rig: EnemyRig;
+  home: THREE.Vector3;
   health: number;
   maxHealth: number;
   radius: number;

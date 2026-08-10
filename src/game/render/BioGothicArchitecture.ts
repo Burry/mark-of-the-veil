@@ -30,6 +30,16 @@ const COVER_POSITIONS: ReadonlyArray<readonly [number, number]> = [
   [23, 13],
 ];
 
+export const STATIC_ARENA_BATCH_CELL_SIZE = 20;
+const STATIC_ARENA_BATCH_MAX_HORIZONTAL_SPAN = STATIC_ARENA_BATCH_CELL_SIZE * 1.5;
+
+interface StaticBatchCandidate {
+  mesh: THREE.Mesh;
+  transform: THREE.Matrix4;
+  cellX: number;
+  cellZ: number;
+}
+
 export function createBioGothicArchitecture(
   root: THREE.Group,
   materials: ArenaMaterialLibrary,
@@ -931,36 +941,98 @@ function batchStaticArchitecture(root: THREE.Group, materials: ArenaMaterialLibr
   ];
 
   opaqueMaterials.forEach((material) => {
-    const meshes: THREE.Mesh[] = [];
+    const cells = new Map<string, StaticBatchCandidate[]>();
     root.traverse((object) => {
       if (!(object instanceof THREE.Mesh) || object instanceof THREE.InstancedMesh) return;
       if (object.material !== material) return;
-      meshes.push(object);
+      if (belongsToAnimatedScenery(object, root)) return;
+      const candidate = createStaticBatchCandidate(object, rootInverse);
+      if (!candidate) return;
+      const cellKey = `${candidate.cellX}:${candidate.cellZ}`;
+      const cell = cells.get(cellKey);
+      if (cell) cell.push(candidate);
+      else cells.set(cellKey, [candidate]);
     });
-    if (meshes.length < 2) return;
 
-    const geometries = meshes.map((mesh) => {
-      const transform = rootInverse.clone().multiply(mesh.matrixWorld);
-      const geometry = mesh.geometry.index ? mesh.geometry.toNonIndexed() : mesh.geometry.clone();
-      geometry.applyMatrix4(transform);
-      return geometry;
-    });
-    const mergedGeometry = mergeGeometries(geometries, false);
-    geometries.forEach((geometry) => geometry.dispose());
-    if (!mergedGeometry) return;
+    cells.forEach((candidates) => {
+      if (candidates.length < 2) return;
+      const geometries = candidates.map(({ mesh, transform }) => {
+        const geometry = mesh.geometry.index ? mesh.geometry.toNonIndexed() : mesh.geometry.clone();
+        geometry.applyMatrix4(transform);
+        return geometry;
+      });
+      const mergedGeometry = mergeGeometries(geometries, false);
+      geometries.forEach((geometry) => geometry.dispose());
+      if (!mergedGeometry) return;
 
-    meshes.forEach((mesh) => {
-      mesh.removeFromParent();
-      mesh.geometry.dispose();
+      candidates.forEach(({ mesh }) => {
+        mesh.removeFromParent();
+        mesh.geometry.dispose();
+      });
+      mergedGeometry.computeBoundingBox();
+      mergedGeometry.computeBoundingSphere();
+      const [{ cellX, cellZ }] = candidates;
+      const batch = new THREE.Mesh(mergedGeometry, material);
+      batch.name = `StaticArchitectureBatch-${material.uuid.slice(0, 8)}-${cellX}-${cellZ}`;
+      batch.castShadow =
+        material !== materials.floor &&
+        material !== materials.blood &&
+        material !== materials.water &&
+        material !== materials.soot;
+      batch.receiveShadow = true;
+      batch.frustumCulled = true;
+      batch.userData.staticBatchCell = {
+        x: cellX,
+        z: cellZ,
+        size: STATIC_ARENA_BATCH_CELL_SIZE,
+      };
+      batch.userData.staticBatchSourceCount = candidates.length;
+      root.add(batch);
     });
-    const batch = new THREE.Mesh(mergedGeometry, material);
-    batch.name = `StaticArchitectureBatch-${material.uuid.slice(0, 8)}`;
-    batch.castShadow =
-      material !== materials.floor &&
-      material !== materials.blood &&
-      material !== materials.water &&
-      material !== materials.soot;
-    batch.receiveShadow = true;
-    root.add(batch);
   });
+}
+
+function createStaticBatchCandidate(
+  mesh: THREE.Mesh,
+  rootInverse: THREE.Matrix4,
+): StaticBatchCandidate | null {
+  const transform = rootInverse.clone().multiply(mesh.matrixWorld);
+  if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
+  const sourceBounds = mesh.geometry.boundingBox;
+  if (!sourceBounds) return null;
+
+  const localBounds = sourceBounds.clone().applyMatrix4(transform);
+  const size = localBounds.getSize(new THREE.Vector3());
+  if (
+    size.x > STATIC_ARENA_BATCH_MAX_HORIZONTAL_SPAN ||
+    size.z > STATIC_ARENA_BATCH_MAX_HORIZONTAL_SPAN
+  ) {
+    return null;
+  }
+
+  const center = localBounds.getCenter(new THREE.Vector3());
+  if (![center.x, center.y, center.z].every(Number.isFinite)) return null;
+  return {
+    mesh,
+    transform,
+    cellX: Math.floor((center.x + STATIC_ARENA_BATCH_CELL_SIZE / 2) / STATIC_ARENA_BATCH_CELL_SIZE),
+    cellZ: Math.floor((center.z + STATIC_ARENA_BATCH_CELL_SIZE / 2) / STATIC_ARENA_BATCH_CELL_SIZE),
+  };
+}
+
+function belongsToAnimatedScenery(object: THREE.Object3D, root: THREE.Object3D): boolean {
+  let current: THREE.Object3D | null = object;
+  while (current && current !== root) {
+    if (
+      typeof current.userData.orbitSpeed === 'number' ||
+      typeof current.userData.memoryRing === 'number' ||
+      typeof current.userData.memoryShard === 'number' ||
+      current.userData.choirCrown === true ||
+      current.userData.preserveFromStaticBatch === true
+    ) {
+      return true;
+    }
+    current = current.parent;
+  }
+  return false;
 }

@@ -177,7 +177,9 @@ input:focus-visible,
     31px 17px;
 }
 
-.reduce-motion * {
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
   animation-duration: 0.001ms !important;
   animation-iteration-count: 1 !important;
   scroll-behavior: auto !important;
@@ -185,7 +187,9 @@ input:focus-visible,
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
@@ -1218,6 +1222,13 @@ input[type='range']::-moz-range-thumb {
   font-weight: 600;
   letter-spacing: 0.1em;
 }
+.objective-panel__chapter {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: var(--ember-hot);
+  font-size: 0.46rem;
+  letter-spacing: 0.16em;
+}
 .objective-panel p {
   margin: 0.3rem 0 0;
   color: rgba(231, 215, 176, 0.7);
@@ -1634,6 +1645,35 @@ input[type='range']::-moz-range-thumb {
   font-size: 0.66rem;
   letter-spacing: 0.12em;
   transform: translateX(-50%);
+}
+
+.tutorial-ribbon {
+  position: absolute;
+  top: 18%;
+  left: 50%;
+  display: flex;
+  min-width: 24rem;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.6rem 1rem;
+  border-block: 1px solid rgba(231, 215, 176, 0.22);
+  background: linear-gradient(90deg, transparent, rgba(5, 7, 12, 0.88) 18% 82%, transparent);
+  transform: translateX(-50%);
+  text-align: center;
+  text-shadow: 0 2px 3px #000;
+}
+
+.tutorial-ribbon span {
+  color: var(--ember-hot);
+  font-size: 0.45rem;
+  letter-spacing: 0.2em;
+}
+
+.tutorial-ribbon strong {
+  color: var(--bone-bright);
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
 }
 .caption {
   position: absolute;
@@ -2564,5 +2604,620 @@ input[type='range']::-moz-range-thumb {
     text-shadow:
       0 2px 2px #000,
       0 0 4px #000;
+  }
+}
+
+/* Campaign command and chapter flow */
+
+.campaign-screen,
+.chapter-briefing,
+.chapter-complete {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: #05070c;
+}
+
+.campaign-skyline {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(4, 7, 12, 0.42), rgba(4, 7, 12, 0.96)),
+    url('/assets/campaign/vespera-in-black.webp') center 42% / cover;
+  filter: saturate(0.68) contrast(1.06);
+}
+
+.campaign-panel {
+  width: min(91rem, 94vw);
+  height: min(52rem, 92vh);
+  padding: clamp(1rem, 2vw, 2rem);
+  background:
+    linear-gradient(110deg, rgba(5, 7, 12, 0.96), rgba(9, 13, 19, 0.86)),
+    radial-gradient(circle at 78% 0%, rgba(84, 123, 160, 0.16), transparent 32%);
+}
+
+.campaign-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 0.4rem 0.5rem 1rem;
+  border-bottom: 1px solid var(--line-faint);
+}
+
+.campaign-header span,
+.chapter-briefing__eyebrow,
+.chapter-briefing__operation,
+.chapter-complete > .engraved-frame > p {
+  color: var(--ember-hot);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+}
+
+.campaign-header h2,
+.chapter-briefing__panel h2,
+.chapter-complete__panel h2 {
+  margin: 0.18rem 0;
+  font-family: var(--display);
+  font-size: clamp(1.8rem, 3vw, 3.3rem);
+  font-weight: 400;
+  letter-spacing: 0.13em;
+  line-height: 0.96;
+  text-transform: uppercase;
+}
+
+.campaign-header p {
+  margin: 0.55rem 0 0;
+  color: var(--ash);
+  font-family: Georgia, serif;
+  font-size: 0.88rem;
+  font-style: italic;
+}
+
+.campaign-progress {
+  display: flex;
+  flex-shrink: 0;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.45rem 0.75rem;
+  border-left: 1px solid var(--line);
+}
+
+.campaign-progress strong {
+  color: var(--bone-bright);
+  font-size: 2.2rem;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.campaign-progress span {
+  color: var(--ash);
+  font-size: 0.54rem;
+}
+
+.chapter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(0.5rem, 0.9vw, 0.85rem);
+  height: calc(100% - 11.2rem);
+  min-height: 24rem;
+  padding: 0;
+  margin: 1rem 0;
+  list-style: none;
+}
+
+.chapter-grid li {
+  min-width: 0;
+  min-height: 0;
+}
+
+.chapter-card {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-height: 11rem;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  overflow: hidden;
+  padding: 1rem;
+  border: 1px solid rgba(231, 215, 176, 0.18);
+  background:
+    radial-gradient(circle at 80% 10%, rgba(125, 105, 167, 0.14), transparent 48%), #0a0e14;
+  cursor: pointer;
+  text-align: left;
+  text-transform: uppercase;
+  transition:
+    border-color 180ms ease,
+    transform 180ms ease,
+    filter 180ms ease;
+}
+
+.chapter-card:hover:not(:disabled),
+.chapter-card:focus-visible,
+.chapter-card.is-current {
+  z-index: 2;
+  border-color: rgba(255, 176, 108, 0.78);
+  transform: translateY(-2px);
+}
+
+.chapter-card:disabled {
+  cursor: not-allowed;
+  filter: grayscale(1) brightness(0.52);
+}
+
+.chapter-card__image,
+.chapter-card__scrim {
+  position: absolute;
+  inset: 0;
+}
+
+.chapter-card__image {
+  background-position: center;
+  background-size: cover;
+  filter: saturate(0.72) contrast(1.06);
+  transform: scale(1.02);
+  transition: transform 600ms ease;
+}
+
+.chapter-card:hover .chapter-card__image,
+.chapter-card:focus-visible .chapter-card__image {
+  transform: scale(1.07);
+}
+
+.chapter-card__scrim {
+  background:
+    linear-gradient(180deg, rgba(3, 5, 9, 0.12) 0%, rgba(3, 5, 9, 0.48) 42%, #05070c 94%),
+    linear-gradient(90deg, rgba(3, 5, 9, 0.42), transparent 58%);
+}
+
+.chapter-card > *:not(.chapter-card__image):not(.chapter-card__scrim) {
+  position: relative;
+  z-index: 1;
+}
+
+.chapter-card__number {
+  position: absolute !important;
+  top: 0.75rem;
+  left: 0.85rem;
+  color: rgba(255, 244, 214, 0.85);
+  font-size: 1.8rem;
+  font-weight: 200;
+  line-height: 1;
+}
+
+.chapter-card__state {
+  position: absolute !important;
+  top: 0.78rem;
+  right: 0.8rem;
+  color: var(--ember-hot);
+  font-size: 0.45rem;
+  letter-spacing: 0.16em;
+}
+
+.chapter-card.is-complete .chapter-card__state {
+  color: #91d5b5;
+}
+
+.chapter-card > strong {
+  max-width: 90%;
+  color: var(--bone-bright);
+  font-size: clamp(0.9rem, 1.15vw, 1.25rem);
+  font-weight: 500;
+  letter-spacing: 0.11em;
+  line-height: 1.05;
+}
+
+.chapter-card > small {
+  margin-top: 0.26rem;
+  color: var(--ember-hot);
+  font-size: 0.47rem;
+  letter-spacing: 0.13em;
+}
+
+.chapter-card__logline {
+  display: -webkit-box;
+  min-height: 2.2rem;
+  margin-top: 0.55rem;
+  overflow: hidden;
+  color: #b8b4ab;
+  font-family: Georgia, serif;
+  font-size: 0.66rem;
+  font-style: italic;
+  line-height: 1.35;
+  text-transform: none;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.chapter-card > i {
+  position: absolute !important;
+  right: 0.8rem;
+  bottom: 0.7rem;
+  color: var(--line);
+  font-size: 0.46rem;
+  font-style: normal;
+  letter-spacing: 0.14em;
+}
+
+.campaign-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0 0.4rem;
+}
+
+.campaign-footer > span {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--ash);
+  font-size: 0.55rem;
+  letter-spacing: 0.16em;
+}
+
+.campaign-footer svg {
+  width: 1.15rem;
+  fill: none;
+  stroke: var(--ember-hot);
+}
+
+.campaign-footer .panel-actions {
+  margin: 0;
+}
+
+.chapter-briefing__plate,
+.chapter-briefing__shade {
+  position: absolute;
+  inset: 0;
+}
+
+.chapter-briefing__plate {
+  background-position: center;
+  background-size: cover;
+  filter: saturate(0.84) contrast(1.06);
+  transform: scale(1.01);
+}
+
+.chapter-briefing__shade {
+  background:
+    linear-gradient(90deg, rgba(3, 5, 9, 0.98) 0%, rgba(3, 5, 9, 0.92) 39%, rgba(3, 5, 9, 0.3) 72%),
+    linear-gradient(180deg, rgba(3, 5, 9, 0.2), rgba(3, 5, 9, 0.78));
+}
+
+.chapter-briefing__panel {
+  width: min(57rem, 72vw);
+  max-height: 92vh;
+  margin-right: 24vw;
+  overflow: auto;
+  padding: clamp(1.25rem, 2.5vw, 2.6rem);
+  background: rgba(5, 7, 12, 0.91);
+}
+
+.chapter-briefing__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--ash);
+}
+
+.chapter-briefing__eyebrow i {
+  width: 2rem;
+  height: 1px;
+  background: var(--line);
+}
+
+.chapter-briefing__operation {
+  margin: 1.2rem 0 0.35rem;
+}
+
+.chapter-briefing__logline {
+  max-width: 44rem;
+  margin: 0.75rem 0 1.25rem;
+  color: #c6c0b3;
+  font-family: Georgia, serif;
+  font-size: clamp(0.86rem, 1.1vw, 1.05rem);
+  font-style: italic;
+  line-height: 1.55;
+}
+
+.chapter-briefing__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.16fr) minmax(14rem, 0.84fr);
+  gap: 1.25rem;
+}
+
+.chapter-briefing__body h3,
+.chapter-difficulty legend {
+  padding: 0;
+  margin: 0 0 0.6rem;
+  color: var(--ash);
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+}
+
+.chapter-objectives {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.chapter-objectives li {
+  display: grid;
+  grid-template-columns: 2.2rem 1fr;
+  align-items: center;
+  min-height: 2.15rem;
+  border-bottom: 1px solid rgba(231, 215, 176, 0.1);
+}
+
+.chapter-objectives span {
+  color: var(--ember-hot);
+  font-size: 0.58rem;
+  letter-spacing: 0.13em;
+}
+
+.chapter-objectives strong {
+  font-size: 0.64rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.chapter-comms {
+  padding: 0.8rem 1rem;
+  border-left: 1px solid var(--line-faint);
+  background: rgba(8, 11, 16, 0.58);
+}
+
+.chapter-comms blockquote {
+  margin: 0 0 0.75rem;
+}
+
+.chapter-comms strong {
+  color: var(--ember-hot);
+  font-size: 0.52rem;
+  letter-spacing: 0.16em;
+}
+
+.chapter-comms p {
+  margin: 0.22rem 0 0;
+  color: #bab6ae;
+  font-family: Georgia, serif;
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.chapter-difficulty {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.45rem;
+  padding: 0.9rem 0 0;
+  margin: 1rem 0 0;
+  border: 0;
+  border-top: 1px solid var(--line-faint);
+}
+
+.chapter-difficulty legend {
+  grid-column: 1 / -1;
+}
+
+.chapter-difficulty button {
+  display: flex;
+  min-height: 3.2rem;
+  flex-direction: column;
+  gap: 0.16rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid rgba(231, 215, 176, 0.13);
+  background: rgba(8, 11, 16, 0.74);
+  cursor: pointer;
+  text-align: left;
+}
+
+.chapter-difficulty button:hover,
+.chapter-difficulty button:focus-visible,
+.chapter-difficulty button.is-selected {
+  border-color: rgba(255, 176, 108, 0.7);
+  background: rgba(63, 35, 25, 0.35);
+}
+
+.chapter-difficulty strong {
+  color: var(--bone-bright);
+  font-size: 0.62rem;
+  letter-spacing: 0.15em;
+}
+
+.chapter-difficulty span {
+  color: var(--ash);
+  font-size: 0.53rem;
+}
+
+.chapter-complete {
+  background:
+    linear-gradient(180deg, rgba(3, 4, 9, 0.52), rgba(3, 4, 9, 0.94)),
+    url('/assets/campaign/vespera-in-black.webp') center / cover;
+}
+
+.chapter-complete__panel {
+  width: min(54rem, 88vw);
+  padding: clamp(1.5rem, 3vw, 3rem);
+  background: rgba(5, 7, 12, 0.93);
+  text-align: center;
+}
+
+.chapter-complete__emblem {
+  width: 3.4rem;
+  height: 3.4rem;
+  color: var(--carrot);
+}
+
+.chapter-complete__panel > p {
+  margin: 0.6rem 0 0.25rem;
+  color: var(--ember-hot);
+  font-size: 0.58rem;
+  letter-spacing: 0.2em;
+}
+
+.chapter-complete__panel blockquote {
+  max-width: 38rem;
+  margin: 1rem auto;
+  color: #c7c1b5;
+  font-family: Georgia, serif;
+  font-size: 0.94rem;
+  font-style: italic;
+  line-height: 1.55;
+}
+
+.chapter-complete__stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 1.2rem 0;
+  border: 1px solid var(--line-faint);
+}
+
+.chapter-complete__stats > div {
+  display: flex;
+  min-height: 4rem;
+  flex-direction: column;
+  justify-content: center;
+  border-right: 1px solid var(--line-faint);
+}
+
+.chapter-complete__stats > div:last-child {
+  border-right: 0;
+}
+
+.chapter-complete__stats span,
+.chapter-complete__next span {
+  color: var(--ash);
+  font-size: 0.5rem;
+  letter-spacing: 0.17em;
+}
+
+.chapter-complete__stats strong {
+  margin-top: 0.24rem;
+  color: var(--bone-bright);
+  font-size: 1.15rem;
+  font-weight: 400;
+}
+
+.chapter-complete__next {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.8rem;
+  border-block: 1px solid var(--line-faint);
+}
+
+.chapter-complete__next strong {
+  color: var(--ember-hot);
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+}
+
+@media (max-width: 1100px), (max-height: 720px) {
+  .campaign-panel {
+    height: 96vh;
+    padding: 0.85rem 1rem;
+  }
+  .campaign-header {
+    padding-bottom: 0.55rem;
+  }
+  .campaign-header h2 {
+    font-size: 1.6rem;
+  }
+  .campaign-header p {
+    display: none;
+  }
+  .campaign-progress strong {
+    font-size: 1.5rem;
+  }
+  .chapter-grid {
+    height: calc(100% - 8rem);
+    min-height: 19rem;
+    margin: 0.55rem 0;
+  }
+  .chapter-card {
+    min-height: 8.6rem;
+    padding: 0.7rem;
+  }
+  .chapter-card__number {
+    top: 0.55rem;
+    font-size: 1.3rem;
+  }
+  .chapter-card__state {
+    top: 0.58rem;
+  }
+  .chapter-card__logline {
+    display: none;
+  }
+  .chapter-briefing__panel {
+    width: 78vw;
+    margin-right: 18vw;
+    padding: 1rem 1.4rem;
+  }
+  .chapter-briefing__logline {
+    margin-bottom: 0.6rem;
+  }
+  .chapter-objectives li {
+    min-height: 1.62rem;
+  }
+  .chapter-comms blockquote:nth-of-type(n + 3) {
+    display: none;
+  }
+  .chapter-difficulty {
+    margin-top: 0.55rem;
+    padding-top: 0.55rem;
+  }
+  .chapter-difficulty button {
+    min-height: 2.3rem;
+  }
+  .chapter-complete__panel {
+    max-height: 96vh;
+    padding: 1rem 1.5rem;
+  }
+}
+
+@media (max-width: 900px) and (orientation: landscape) {
+  .campaign-panel {
+    width: 97vw;
+  }
+  .chapter-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.32rem;
+  }
+  .chapter-card > strong {
+    font-size: 0.72rem;
+  }
+  .chapter-card > small,
+  .chapter-card > i,
+  .campaign-footer > span {
+    display: none;
+  }
+  .campaign-footer {
+    justify-content: flex-end;
+  }
+  .campaign-footer .menu-button {
+    min-height: 1.65rem;
+  }
+  .chapter-briefing__panel {
+    width: 94vw;
+    margin-right: 0;
+  }
+  .chapter-briefing__body {
+    grid-template-columns: 1.3fr 0.7fr;
+  }
+  .chapter-briefing__logline,
+  .chapter-comms p {
+    font-size: 0.62rem;
+  }
+  .chapter-difficulty span {
+    display: none;
   }
 }

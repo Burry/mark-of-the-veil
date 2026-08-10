@@ -36,8 +36,9 @@ describe('character render budgets', () => {
     // Intentionally logged: these budgets are part of visual-performance QA evidence.
     console.info(`character-render-budgets ${JSON.stringify({ ...stats, representativeWave })}`);
 
-    expect(stats.mark.drawCalls).toBeLessThanOrEqual(150);
-    expect(stats.mark.triangles).toBeLessThanOrEqual(140_000);
+    expect(stats.mark.drawCalls).toBeLessThanOrEqual(90);
+    expect(stats.mark.triangles).toBeLessThanOrEqual(80_000);
+    expect(stats.mark.visibleInstances).toBeGreaterThanOrEqual(600);
     expect(stats.chainling.drawCalls).toBeLessThanOrEqual(70);
     expect(stats.needlewing.drawCalls).toBeLessThanOrEqual(70);
     expect(stats.heavy.drawCalls).toBeLessThanOrEqual(100);

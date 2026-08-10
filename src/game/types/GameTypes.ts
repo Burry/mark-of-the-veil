@@ -1,6 +1,9 @@
 export type GameScreen =
   | 'title'
-  | 'briefing'
+  | 'prologue'
+  | 'campaign'
+  | 'chapterBriefing'
+  | 'chapterComplete'
   | 'loading'
   | 'playing'
   | 'paused'
@@ -52,6 +55,9 @@ export interface RunStats {
 export interface GameSnapshot {
   screen: GameScreen;
   loadingProgress: number;
+  chapterId: string;
+  chapterNumber: number;
+  chapterTitle: string;
   health: number;
   maxHealth: number;
   shield: number;
@@ -65,10 +71,12 @@ export interface GameSnapshot {
   perspective: Perspective;
   objective: string;
   objectiveDetail: string;
+  objectiveUnit: string;
   seals: number;
   totalSeals: number;
   enemiesRemaining: number;
   bossName: string | null;
+  bossSubtitle: string | null;
   bossHealth: number;
   bossMaxHealth: number;
   score: number;
@@ -77,6 +85,7 @@ export interface GameSnapshot {
   damageDirection: number | null;
   caption: string | null;
   interactPrompt: string | null;
+  tutorialHint: string | null;
   pointerLocked: boolean;
   inputDevice: InputDevice;
   selectedUpgrade: UpgradeId | null;
@@ -110,6 +119,7 @@ export interface GameRuntimePort {
 
 export interface RuntimeOptions {
   canvas: HTMLCanvasElement;
+  chapterId: string;
   difficulty: Difficulty;
   settings: GameSettings;
   callbacks: GameCallbacks;

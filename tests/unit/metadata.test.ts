@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
-const CANONICAL_URL = 'https://mark-of-the-veil.vercel.app/';
+const CANONICAL_URL = 'https://mark-of-the-veil.burry.io/';
 const SOCIAL_IMAGE_URL = `${CANONICAL_URL}og-image.jpg`;
 const html = readFileSync(`${ROOT}/index.html`, 'utf8');
 const manifest = JSON.parse(readFileSync(`${ROOT}/public/manifest.webmanifest`, 'utf8')) as {

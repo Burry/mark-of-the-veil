@@ -4,7 +4,7 @@
   "private": true,
   "description": "A cinematic science-fantasy WebGL action game with first-person and third-person combat.",
   "license": "MIT",
-  "homepage": "https://mark-of-the-veil.vercel.app/",
+  "homepage": "https://mark-of-the-veil.burry.io/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Burry/mark-of-the-veil.git"

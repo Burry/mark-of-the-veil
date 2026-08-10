@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://mark-of-the-veil.vercel.app/"><strong>Play the game</strong></a>
+  <a href="https://mark-of-the-veil.burry.io/"><strong>Play the game</strong></a>
   ·
   <a href="./docs/GAME_DESIGN.md">Game design</a>
   ·

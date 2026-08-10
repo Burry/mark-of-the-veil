@@ -6,6 +6,11 @@ import { RUNTIME_COMPLETION_INTEGRATION_BRIDGE_KEY } from '../../src/game/runtim
 const CAMPAIGN_STORAGE_KEY = 'mark-of-the-veil:campaign:v1';
 const RUNTIME_READY_TIMEOUT_MS = 120_000;
 
+test.skip(
+  Boolean(process.env.CI),
+  'Sustained movement-to-completion UAT requires hardware WebGL; CI retains the real SwiftShader boot path.',
+);
+
 async function moveToWorldPosition(
   page: Page,
   targetX: number,

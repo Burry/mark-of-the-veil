@@ -1,0 +1,18 @@
+{
+  "name": "Mark of the Veil",
+  "short_name": "Mark of the Veil",
+  "description": "A cinematic science-fantasy browser action game.",
+  "start_url": "/",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#05070c",
+  "theme_color": "#05070c",
+  "icons": [
+    {
+      "src": "/mark-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

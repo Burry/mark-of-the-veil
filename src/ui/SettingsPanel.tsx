@@ -12,7 +12,7 @@ interface SettingsPanelProps {
   onBack?: () => void;
   onResume?: () => void;
   onRestart?: () => void;
-  onReturnToTitle?: () => void;
+  onReturnToCampaign?: () => void;
   activeTab: SettingsTab;
   onTabChange: (tab: SettingsTab) => void;
 }
@@ -118,7 +118,7 @@ export function SettingsPanel({
   onBack,
   onResume,
   onRestart,
-  onReturnToTitle,
+  onReturnToCampaign,
   activeTab,
   onTabChange,
 }: SettingsPanelProps) {
@@ -345,7 +345,7 @@ export function SettingsPanel({
             RESUME
           </MenuButton>
           <MenuButton onClick={() => onRestart?.()}>RESTART MISSION</MenuButton>
-          <MenuButton onClick={() => onReturnToTitle?.()}>RETURN TO TITLE</MenuButton>
+          <MenuButton onClick={() => onReturnToCampaign?.()}>RETURN TO CAMPAIGN</MenuButton>
         </div>
       ) : (
         <div className="panel-actions panel-actions--center">

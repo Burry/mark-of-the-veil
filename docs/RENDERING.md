@@ -66,8 +66,8 @@ while the BVH builds.
   This avoids a redundant 4x color/depth allocation and resolve. The second degradation level
   replaces SMAA's multi-pass edge search with one FXAA pass while retaining the composite
   sharpener.
-- Bloom remains enabled at every HDR tier, but its intentionally low-frequency buffers run at 72%
-  of composer resolution in full Cinematic mode, 60.5% after the first degradation, and 50.4% at
+- Bloom remains enabled at every HDR tier, but its intentionally low-frequency buffers run at 64%
+  of composer resolution in full Cinematic mode, 53.8% after the first degradation, and 44.8% at
   the second degradation level.
 - Sustained frame time above budget disables reflections first and GTAO second. Hysteresis restores
   one feature only after eight seconds of healthy frames, preventing quality oscillation. The first
@@ -88,11 +88,21 @@ while the BVH builds.
   point lights, path status/reason/progress/build time, retained and culled trace triangles, path
   samples, FPS, accumulated calls/triangles/points, and GPU geometry/texture/program counts.
 
-## Native performance verification
+### Automation boundary
+
+Playwright validates WebGL 2 startup, the requested High setting, selected and adaptive raster
+tiers, nonblank image variance, render statistics, and console health. Diagnostics mode disables
+the optional frozen-scene path tracer by design. Playwright therefore does not qualify path-traced
+output or hardware performance. Both require a controlled hardware run with recorded device,
+browser, viewport, settings, and path-tracing sample count.
+
+## Historical native performance snapshot
 
 The rescue pass was measured in hardware-backed Chromium on an Apple M4 at a native
 1672 × 941 canvas using the unchanged in-game half-second FPS sampler. `?diagnostics=1` disabled
 only frozen-frame path tracing so the moving raster path could be compared consistently.
+These measurements predate the eight-chapter campaign expansion and are not a current campaign
+performance certification.
 
 | State                                   | FPS   | Calls | Triangles | Adaptive level / scale |
 | --------------------------------------- | ----- | ----: | --------: | ---------------------- |

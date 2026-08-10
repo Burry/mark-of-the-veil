@@ -22,14 +22,45 @@
   <a href="https://github.com/Burry/mark-of-the-veil/actions/workflows/ci.yml"><img src="https://github.com/Burry/mark-of-the-veil/actions/workflows/ci.yml/badge.svg" alt="CI status" /></a>
 </p>
 
-**Mark of the Veil** is a cinematic science-fantasy action game for desktop browsers. Play as Mark,
-a battle-worn purple unicorn pilot, as he escapes a living alien city. The game is a replayable 10
-to 15 minute mission with switchable first-person and third-person combat, three enemy classes, a
-boss, upgrades, scoring, and a complete ending.
+**Mark of the Veil** is an eight-chapter science-fantasy action campaign for desktop browsers.
+Play as Mark, a battle-worn purple unicorn pilot, across Vespera, the Eidolon Crown, and the alien
+Root Choir. Combat supports instant first-person and third-person switching, keyboard and mouse,
+standard gamepads, optional haptics, spatial sound, and an adaptive procedural score.
 
-![In-engine third-person gameplay in the flooded Root Vault](./docs/screenshots/gameplay.jpg)
+The campaign contains eight compact combat levels. It is not an open world. Each chapter loads a
+distinct arena layout, hero scenery, color and lighting profile, weather or particle treatment,
+authored recovery prop, encounter script, boss silhouette, and music profile. Shared systems keep the
+download and GPU workload practical for a browser.
+
+![In-engine third-person gameplay inside the Root Choir](./docs/screenshots/the-root-choir.jpg)
 
 <p align="center"><sub>In-engine gameplay on the High render setting.</sub></p>
+
+## Campaign
+
+![Eight-chapter campaign map with ordered progression](./docs/screenshots/campaign-map.jpg)
+
+<p align="center"><sub>In-game campaign map. Chapters unlock in narrative order.</sub></p>
+
+| Chapter | Location                  | Runtime identity                                |
+| ------: | ------------------------- | ----------------------------------------------- |
+|      01 | **Ashes of Home**         | Wayfarer crash basin and stormglass observatory |
+|      02 | **The Root Vault**        | Bio-gothic prison and fungal aqueduct           |
+|      03 | **Vespera in Black**      | Rain-soaked relay rooftops                      |
+|      04 | **The Drowned Cathedral** | Flooded nave and three Veil seals               |
+|      05 | **The Silent Orbit**      | Orbital lift, rings, and drifting debris        |
+|      06 | **The Memory Forge**      | Fractured archive and rotating memory engine    |
+|      07 | **Crown of Eidolon**      | Conduit trenches and living gate                |
+|      08 | **The Root Choir**        | Memory causeway and neural convergence          |
+
+Every chapter follows a focused action spine: recover its physical story prop, cross three objective
+sites, clear their combat encounters, choose a relic, defeat the chapter boss, and extract. Briefings
+and in-game transmissions carry one continuous three-act story through the final revelation.
+
+Campaign progress is stored locally when a chapter is completed and when the next chapter begins.
+Reloading resumes from the current chapter boundary. The codebase contains typed checkpoint
+definitions for future expansion, but the shipped game does not resume from a mid-chapter
+checkpoint.
 
 ## The experiment
 
@@ -38,35 +69,40 @@ Codex, one simple prompt and a concept image a friend had sent me. The goal was 
 single build pass could produce a complete browser game instead of a mockup or isolated mechanic.
 
 The first pass established the premise, playable mission, visual direction, and WebGL foundation.
-Later agent passes refined the character materials, lighting, performance, accessibility, controls,
-audio, tests, metadata, and deployment. One-shot describes the initial build constraint. The public
-release includes that subsequent engineering and editorial work.
+Later agent passes expanded it into an eight-chapter campaign and refined the character materials,
+lighting, audio, performance, accessibility, controls, tests, metadata, documentation, and
+deployment. One-shot describes the initial build constraint. The public release includes that
+subsequent production and editorial work.
 
-The original concept image is not included in this repository. Project-specific image plates and
-material maps were generated and processed through the Codex workflow. The stone photoscan and HDR
-environment are CC0 assets credited in [`THIRD_PARTY_NOTICES.md`](./THIRD_PARTY_NOTICES.md).
+My friend approved publication of his supplied assets. The original concept image remains excluded
+from this repository. Shipped image plates and material studies were generated and processed through
+the Codex workflow. The stone photoscan and HDR environment are CC0 assets credited in
+[`THIRD_PARTY_NOTICES.md`](./THIRD_PARTY_NOTICES.md).
 
 ## Highlights
 
-- Switch between first-person and third-person views at any time.
-- Play with keyboard and mouse or a standard gamepad, with optional haptics.
-- Fight through a complete mission with upgrades, a boss, ranks, and replay.
-- Hear a procedural score, ambience, weapons, impacts, and spatial effects built with Web Audio.
-- Tune quality, field of view, sensitivity, aim assist, captions, motion, flashes, camera shake, and
-  audio buses.
-- Install it as a standalone PWA. No account, backend, runtime API key, or asset CDN is required.
+- Eight selectable chapters with ordered unlocks, chapter briefings, completion screens, and a
+  complete ending.
+- Instant first-person and third-person combat using one authoritative player pose and aim ray.
+- Three regular enemy archetypes, chapter-specific encounter waves, and arena collision constraints
+  for both Mark and enemies.
+- Eight procedural boss silhouette and animation kits over one shared Regent behavior family.
+- Keyboard and mouse plus standard gamepad controls, optional haptics, and device-aware prompts.
+- Eight procedural Web Audio profiles with distinct tempo, meter, harmony, motif, ambience, and
+  combat intensity.
+- Quality, field of view, sensitivity, aim assist, captions, motion, flashes, camera shake, haptics,
+  and separate audio bus settings.
+- Standalone PWA installation with no account, backend, runtime API key, or asset CDN.
 
-## Rendering
+## Browser rendering scope
 
-Moving gameplay uses a WebGL 2 hybrid renderer with physically based materials, HDR composition,
-screen-space reflections, GTAO, soft shadows, bloom, antialiasing, and cinematic color grading.
-Frozen high-quality scenes can progressively converge through a worker-backed four-bounce GPU path
-tracer. The raster image remains available as a fallback, and moving combat is never labeled as
-hardware ray tracing.
+Moving gameplay uses WebGL 2 with physically based materials, HDR composition, screen-space
+effects, soft shadows, bloom, antialiasing, and cinematic color grading. High-quality frozen scenes
+can use an optional progressive path-tracing presentation when the browser and GPU support it.
+Combat is rasterized WebGL and does not use hardware ray tracing.
 
-The renderer adapts its effects, light budget, and internal resolution when frame time rises. See
-[`docs/RENDERING.md`](./docs/RENDERING.md) for the capability ladder, measured performance, and
-path-tracing boundary.
+The renderer adapts effects, forward lights, and internal resolution when frame time rises. See
+[`docs/RENDERING.md`](./docs/RENDERING.md) for the capability ladder and measured performance.
 
 ## Run locally
 
@@ -77,7 +113,8 @@ npm ci
 npm run dev
 ```
 
-Open the local URL, choose **Begin Descent**, then click the game surface to capture the mouse.
+Open the local URL, choose **Begin Campaign**, select **Ashes of Home**, then click the game surface
+to capture the mouse.
 
 ## Controls
 
@@ -100,35 +137,38 @@ npm run check
 npm run test:e2e
 ```
 
-`npm run check` runs formatting, linting, type checks, unit tests, and a production build. The
-Playwright suite serves the production output and verifies metadata, public assets, menus, WebGL
-startup, and the core control path.
+`npm run check` runs formatting, linting, type checks, unit tests, and a production build. Playwright
+serves the production output and verifies metadata, public assets, menus, WebGL startup, and the core
+control path.
 
-The main implementation boundaries are documented here:
-
-- [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md): React, engine, simulation, input, and lifecycle
-- [`docs/GAME_DESIGN.md`](./docs/GAME_DESIGN.md): mission, combat kit, enemies, upgrades, and scoring
-- [`docs/DESIGN.md`](./docs/DESIGN.md): visual system, accessibility, and asset inventory
-- [`docs/RENDERING.md`](./docs/RENDERING.md): rendering tiers, path tracing, budgets, and fallbacks
+- [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md): campaign state, React, runtime, rendering, audio,
+  input, persistence, and lifecycle
+- [`docs/GAME_DESIGN.md`](./docs/GAME_DESIGN.md): story arc, levels, combat, encounters, scoring, and
+  shipped boundaries
+- [`docs/DESIGN.md`](./docs/DESIGN.md): visual system, chapter profiles, accessibility, and assets
+- [`docs/CAMPAIGN.md`](./docs/CAMPAIGN.md): long-form narrative and future production bible
+- [`docs/WORLD_AUDIO_BIBLE.md`](./docs/WORLD_AUDIO_BIBLE.md): art, cinematography, sound, and music
+  direction, including targets beyond the current runtime
+- [`docs/RENDERING.md`](./docs/RENDERING.md): rendering tiers, budgets, progressive presentation, and
+  fallbacks
 
 ## Deploy
 
-Import the repository into Vercel. The included [`vercel.json`](./vercel.json) builds the Vite app
-and serves `dist/` with production caching and security headers. No environment variables are
-required.
+Import the repository into Vercel. [`vercel.json`](./vercel.json) builds the Vite app and serves
+`dist/` with production caching and security headers. No environment variables are required.
 
 ## License and credits
 
-The project code and original assets are available under the [MIT License](./LICENSE). Third-party
+Project code and original assets are available under the [MIT License](./LICENSE). Third-party
 software and CC0 asset credits are listed in
 [`THIRD_PARTY_NOTICES.md`](./THIRD_PARTY_NOTICES.md).
 
 <details>
 <summary>Narrative ending: spoiler</summary>
 
-After defeating the Hollow Regent, Mark infiltrates the Root Choir and receives the alien
-hive-mind's total knowledge. He searches that knowledge for his origin, discovers that unicorns
-were never real, and loses the boundary between himself and everything known. Mark ceases to exist.
-The Choir remembers the impossible unicorn who entered it.
+After entering the Root Choir, Mark receives the alien hive-mind's total knowledge. He searches it
+for his origin and discovers that unicorns never existed. With no boundary left between the knower
+and everything known, Mark ceases to exist. The Choir remembers the impossible unicorn who entered
+it.
 
 </details>

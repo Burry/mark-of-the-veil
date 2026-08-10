@@ -93,6 +93,9 @@ export function HUD({ snapshot, settings, muted = false }: HUDProps) {
       <section className="objective-panel" aria-live="polite">
         <SigilIcon />
         <div>
+          <small className="objective-panel__chapter">
+            CHAPTER {snapshot.chapterNumber.toString().padStart(2, '0')} // {snapshot.chapterTitle}
+          </small>
           <h2>{snapshot.objective}</h2>
           <p>{snapshot.objectiveDetail}</p>
           {snapshot.totalSeals > 0 && (
@@ -100,7 +103,7 @@ export function HUD({ snapshot, settings, muted = false }: HUDProps) {
               {Array.from({ length: snapshot.totalSeals }, (_, index) => (
                 <i className={index < snapshot.seals ? 'is-open' : ''} key={index} />
               ))}
-              {snapshot.seals} / {snapshot.totalSeals} SEALS
+              {snapshot.seals} / {snapshot.totalSeals} {snapshot.objectiveUnit}
             </span>
           )}
         </div>
@@ -111,7 +114,7 @@ export function HUD({ snapshot, settings, muted = false }: HUDProps) {
           <>
             <div className="boss-label">
               <span>{snapshot.bossName}</span>
-              <strong>THE CROWN&apos;S LAST WITNESS</strong>
+              <strong>{snapshot.bossSubtitle ?? 'CROWN WAR FORM'}</strong>
             </div>
             <div
               className="boss-meter"
@@ -225,6 +228,13 @@ export function HUD({ snapshot, settings, muted = false }: HUDProps) {
         <div className="interact-prompt" role="status">
           <Keycap>{snapshot.inputDevice === 'gamepad' ? 'X' : 'E'}</Keycap>
           <span>{snapshot.interactPrompt}</span>
+        </div>
+      )}
+
+      {snapshot.tutorialHint && (
+        <div className="tutorial-ribbon" role="status">
+          <span>WAYFARER TRAINING RECALL</span>
+          <strong>{snapshot.tutorialHint}</strong>
         </div>
       )}
 

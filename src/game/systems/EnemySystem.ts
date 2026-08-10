@@ -11,7 +11,14 @@ import type {
   HostileProjectile,
 } from './WorldTypes';
 import { SeededRandom } from '../utils/SeededRandom';
-import { clamp, distanceToRay, disposeObject, shortestAngleDifference, TAU } from '../utils/math';
+import {
+  circlePushOut,
+  clamp,
+  distanceToRay,
+  disposeObject,
+  shortestAngleDifference,
+  TAU,
+} from '../utils/math';
 
 interface DifficultyProfile {
   health: number;
@@ -45,6 +52,8 @@ export class EnemySystem {
     private readonly effects: EffectsDirector,
     difficulty: Difficulty,
     private readonly random: SeededRandom,
+    private readonly obstacles: ReadonlyArray<{ center: THREE.Vector3; radius: number }> = [],
+    private readonly playRadius = 38,
   ) {
     this.profile = DIFFICULTY[difficulty];
   }
@@ -62,6 +71,7 @@ export class EnemySystem {
       id: this.nextId++,
       kind,
       rig,
+      home: rig.root.position.clone(),
       health: maxHealth,
       maxHealth,
       radius: stats.radius,
@@ -87,7 +97,8 @@ export class EnemySystem {
         center.z + Math.sin(angle) * radius,
       );
       const arenaDistance = Math.hypot(_spawnPosition.x, _spawnPosition.z);
-      if (arenaDistance > 38) _spawnPosition.multiplyScalar(38 / arenaDistance);
+      const spawnRadius = Math.max(4, this.playRadius - 2);
+      if (arenaDistance > spawnRadius) _spawnPosition.multiplyScalar(spawnRadius / arenaDistance);
       return this.spawn(kind, _spawnPosition.clone());
     });
   }
@@ -119,6 +130,7 @@ export class EnemySystem {
     }
 
     this.separateEnemies();
+    this.constrainActorsToArena();
     summons.forEach(({ kind, position }) => {
       this.spawnWave([kind], position, 4.5);
       result.spawned.push(kind);
@@ -323,9 +335,9 @@ export class EnemySystem {
     const healthRatio = actor.health / actor.maxHealth;
     const orbitRadius = healthRatio > 0.48 ? 9 : 12;
     _desired.set(
-      Math.cos(time * 0.16 + actor.phase) * orbitRadius,
-      6.2 + Math.sin(time * 0.55) * 1.3,
-      Math.sin(time * 0.16 + actor.phase) * orbitRadius,
+      actor.home.x + Math.cos(time * 0.16 + actor.phase) * orbitRadius,
+      actor.home.y + Math.sin(time * 0.55) * 1.3,
+      actor.home.z + Math.sin(time * 0.16 + actor.phase) * orbitRadius,
     );
     root.position.lerp(_desired, 1 - Math.exp(-delta * actor.speed * 0.34));
     root.rotation.y += delta * (0.45 + (1 - healthRatio) * 0.8);
@@ -479,6 +491,22 @@ export class EnemySystem {
       material.emissiveIntensity += (4.1 - material.emissiveIntensity) * 0.08;
     });
     if (actor.kind === 'chainling') actor.rig.root.position.y = Math.abs(Math.sin(cycle)) * 0.08;
+  }
+
+  private constrainActorsToArena(): void {
+    for (const actor of this.enemies) {
+      if (!actor.alive) continue;
+      const position = actor.rig.root.position;
+      const radialDistance = Math.hypot(position.x, position.z);
+      const maximumRadius = Math.max(2, this.playRadius - actor.radius);
+      if (radialDistance > maximumRadius) {
+        position.x *= maximumRadius / radialDistance;
+        position.z *= maximumRadius / radialDistance;
+      }
+      this.obstacles.forEach((obstacle) =>
+        circlePushOut(position, obstacle.center, obstacle.radius + actor.radius * 0.82),
+      );
+    }
   }
 
   private separateEnemies(): void {

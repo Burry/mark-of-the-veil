@@ -4,14 +4,18 @@ export interface MarkMaterials {
   fur: THREE.MeshPhysicalMaterial;
   shortFur: THREE.MeshPhysicalMaterial;
   darkFur: THREE.MeshPhysicalMaterial;
+  guardFur: THREE.MeshPhysicalMaterial;
   mane: THREE.MeshPhysicalMaterial;
+  maneEdge: THREE.MeshPhysicalMaterial;
   skin: THREE.MeshPhysicalMaterial;
   armor: THREE.MeshPhysicalMaterial;
   armorEdge: THREE.MeshPhysicalMaterial;
+  armorWear: THREE.MeshPhysicalMaterial;
   bronze: THREE.MeshPhysicalMaterial;
   leather: THREE.MeshPhysicalMaterial;
   cloth: THREE.MeshStandardMaterial;
   horn: THREE.MeshPhysicalMaterial;
+  hornGroove: THREE.MeshPhysicalMaterial;
   eye: THREE.MeshStandardMaterial;
 }
 
@@ -40,20 +44,20 @@ export function createMarkMaterials(): MarkMaterials {
   const furAtlas = loadSharedTexture(
     '/assets/materials/mark-fur-albedo-v2.webp',
     'srgb',
-    1.15,
-    1.15,
+    2.35,
+    2.65,
   );
   const furHeight = loadSharedTexture(
     '/assets/materials/mark-fur-height.webp',
     'linear',
-    1.15,
-    1.15,
+    2.35,
+    2.65,
   );
   const furRoughness = loadSharedTexture(
     '/assets/materials/mark-fur-roughness.webp',
     'linear',
-    1.15,
-    1.15,
+    2.35,
+    2.65,
   );
   const fiberNoise = getProceduralTexture('fiber-noise', 256, createFiberNoise);
   const armorAtlas = loadSharedTexture(
@@ -78,120 +82,213 @@ export function createMarkMaterials(): MarkMaterials {
   const brushed = getProceduralTexture('brushed-metal', 256, createBrushedMetal);
 
   const fur = new THREE.MeshPhysicalMaterial({
-    color: 0x8c788f,
+    color: 0xe7dce9,
     map: furAtlas,
-    roughness: 0.98,
+    emissive: new THREE.Color(0x34253a),
+    emissiveMap: furAtlas,
+    emissiveIntensity: 0.22,
+    roughness: 0.82,
     roughnessMap: furRoughness,
     metalness: 0,
     bumpMap: furHeight,
-    bumpScale: 0.055,
-    sheen: 0.24,
-    sheenColor: new THREE.Color(0x9179a1),
-    sheenRoughness: 0.94,
-    envMapIntensity: 0.36,
+    bumpScale: 0.13,
+    sheen: 0.64,
+    sheenColor: new THREE.Color(0xd7bfe8),
+    sheenRoughness: 0.76,
+    anisotropy: 0.34,
+    anisotropyRotation: Math.PI / 2,
+    specularIntensity: 0.32,
+    specularColor: new THREE.Color(0xd8c3e4),
+    envMapIntensity: 0.72,
   });
+  tagMaterial(fur, 'Mark fur | long coat', 'mapped-coat');
   const shortFur = fur.clone();
-  shortFur.color.setHex(0x746078);
-  shortFur.bumpScale = 0.045;
-  shortFur.sheen = 0.18;
+  shortFur.color.setHex(0xc7b8cd);
+  shortFur.bumpScale = 0.105;
+  shortFur.emissiveIntensity = 0.17;
+  shortFur.sheen = 0.48;
+  shortFur.sheenRoughness = 0.82;
+  tagMaterial(shortFur, 'Mark fur | short coat', 'mapped-coat');
   const darkFur = fur.clone();
-  darkFur.color.setHex(0x493b4e);
-  darkFur.bumpScale = 0.05;
+  darkFur.color.setHex(0x8c788f);
+  darkFur.bumpScale = 0.115;
+  darkFur.emissiveIntensity = 0.11;
+  darkFur.sheen = 0.38;
+  darkFur.envMapIntensity = 0.58;
+  tagMaterial(darkFur, 'Mark fur | shadow coat', 'mapped-coat');
+  const guardFur = fur.clone();
+  guardFur.color.setHex(0x715c78);
+  guardFur.map = null;
+  guardFur.bumpMap = null;
+  guardFur.roughnessMap = null;
+  guardFur.emissiveMap = null;
+  guardFur.emissive.setHex(0x140b19);
+  guardFur.emissiveIntensity = 0.08;
+  guardFur.roughness = 0.85;
+  guardFur.sheen = 0.52;
+  guardFur.sheenRoughness = 0.76;
+  guardFur.envMapIntensity = 0.58;
+  tagMaterial(guardFur, 'Mark fur | guard hairs', 'silhouette-fiber');
 
   const mane = new THREE.MeshPhysicalMaterial({
-    color: 0x4e1b6f,
+    color: 0xbc6bd1,
     map: furAtlas,
-    roughness: 0.96,
+    emissive: new THREE.Color(0x2c1038),
+    emissiveMap: furAtlas,
+    emissiveIntensity: 0.24,
+    roughness: 0.82,
     roughnessMap: furRoughness,
     bumpMap: furHeight,
-    bumpScale: 0.065,
-    sheen: 0.3,
-    sheenColor: new THREE.Color(0x8d4dac),
-    sheenRoughness: 0.82,
+    bumpScale: 0.095,
+    sheen: 0.74,
+    sheenColor: new THREE.Color(0xd28ee5),
+    sheenRoughness: 0.66,
+    anisotropy: 0.58,
+    anisotropyRotation: Math.PI / 2,
     clearcoat: 0,
-    envMapIntensity: 0.42,
+    envMapIntensity: 0.88,
   });
+  tagMaterial(mane, 'Mark mane | primary locks', 'mapped-mane');
+  const maneEdge = mane.clone();
+  maneEdge.color.setHex(0x673176);
+  maneEdge.map = null;
+  maneEdge.bumpMap = null;
+  maneEdge.roughnessMap = null;
+  maneEdge.roughness = 0.7;
+  maneEdge.sheen = 0.94;
+  maneEdge.sheenRoughness = 0.55;
+  maneEdge.emissiveMap = null;
+  maneEdge.emissive.setHex(0x120719);
+  maneEdge.emissiveIntensity = 0.1;
+  tagMaterial(maneEdge, 'Mark mane | flyaways', 'silhouette-fiber');
   const skin = new THREE.MeshPhysicalMaterial({
-    color: 0x251b27,
-    roughness: 0.72,
+    color: 0x4a3548,
+    roughness: 0.64,
     bumpMap: grit,
-    bumpScale: 0.055,
-    clearcoat: 0.08,
+    bumpScale: 0.085,
+    clearcoat: 0.16,
+    clearcoatRoughness: 0.72,
+    sheen: 0.08,
+    sheenColor: new THREE.Color(0x9d728f),
+    specularIntensity: 0.38,
+    specularColor: new THREE.Color(0x9b7a90),
+    envMapIntensity: 0.54,
   });
+  tagMaterial(skin, 'Mark skin | muzzle and ears', 'porous-skin');
   const armor = new THREE.MeshPhysicalMaterial({
-    color: 0xb6b9bc,
+    color: 0xe0e4e5,
     map: armorAtlas,
-    metalness: 0.86,
-    roughness: 0.72,
+    emissive: new THREE.Color(0x22272a),
+    emissiveMap: armorAtlas,
+    emissiveIntensity: 0.16,
+    metalness: 0.82,
+    roughness: 0.56,
     roughnessMap: armorRoughness,
     bumpMap: armorHeight,
-    bumpScale: 0.045,
-    clearcoat: 0.12,
-    clearcoatRoughness: 0.56,
-    envMapIntensity: 1.35,
+    bumpScale: 0.075,
+    clearcoat: 0.16,
+    clearcoatRoughness: 0.48,
+    anisotropy: 0.2,
+    envMapIntensity: 1.62,
   });
+  tagMaterial(armor, 'Mark armor | oxidized plate', 'worn-metal');
   const armorEdge = armor.clone();
-  armorEdge.color.setHex(0xd2d5d6);
-  armorEdge.roughness = 0.58;
-  armorEdge.bumpScale = 0.032;
+  armorEdge.color.setHex(0xf1f1ed);
+  armorEdge.roughness = 0.38;
+  armorEdge.bumpScale = 0.052;
+  armorEdge.clearcoat = 0.24;
+  armorEdge.envMapIntensity = 1.94;
+  tagMaterial(armorEdge, 'Mark armor | exposed edges', 'polished-metal-edge');
+  const armorWear = armor.clone();
+  armorWear.color.setHex(0xb79a7b);
+  armorWear.roughness = 0.44;
+  armorWear.bumpScale = 0.064;
+  armorWear.clearcoat = 0.08;
+  armorWear.envMapIntensity = 1.45;
+  tagMaterial(armorWear, 'Mark armor | abraded inlay', 'battle-wear');
   const bronze = new THREE.MeshPhysicalMaterial({
-    color: 0x76502e,
-    metalness: 0.94,
-    roughness: 0.36,
+    color: 0x8c613d,
+    metalness: 0.9,
+    roughness: 0.46,
     bumpMap: brushed,
-    bumpScale: 0.026,
-    clearcoat: 0.22,
-    clearcoatRoughness: 0.34,
-    envMapIntensity: 1.8,
+    bumpScale: 0.038,
+    clearcoat: 0.16,
+    clearcoatRoughness: 0.42,
+    anisotropy: 0.48,
+    envMapIntensity: 1.72,
   });
+  tagMaterial(bronze, 'Mark armor | aged bronze', 'brushed-metal');
   const leather = new THREE.MeshPhysicalMaterial({
-    color: 0x201713,
-    roughness: 0.88,
+    color: 0x38251e,
+    roughness: 0.86,
     metalness: 0.02,
     bumpMap: grit,
-    bumpScale: 0.09,
-    sheen: 0.12,
-    sheenColor: new THREE.Color(0x7b4935),
+    bumpScale: 0.12,
+    sheen: 0.2,
+    sheenColor: new THREE.Color(0x8b5642),
+    sheenRoughness: 0.88,
+    clearcoat: 0.04,
   });
+  tagMaterial(leather, 'Mark harness | scarred leather', 'organic-harness');
   const cloth = new THREE.MeshStandardMaterial({
-    color: 0x100e12,
+    color: 0x17131a,
     roughness: 1,
     bumpMap: fiberNoise,
-    bumpScale: 0.12,
+    bumpScale: 0.15,
   });
+  tagMaterial(cloth, 'Mark blindfold | woven cloth', 'woven-cloth');
   const horn = new THREE.MeshPhysicalMaterial({
-    color: 0x8f789e,
-    roughness: 0.3,
+    color: 0xb9a7c1,
+    roughness: 0.38,
     metalness: 0.04,
     bumpMap: grit,
-    bumpScale: 0.04,
-    clearcoat: 0.52,
-    clearcoatRoughness: 0.24,
-    iridescence: 0.18,
+    bumpScale: 0.07,
+    clearcoat: 0.32,
+    clearcoatRoughness: 0.31,
+    iridescence: 0.12,
     iridescenceIOR: 1.32,
-    emissive: new THREE.Color(0x1c0b29),
-    emissiveIntensity: 0.22,
+    emissive: new THREE.Color(0x13091b),
+    emissiveIntensity: 0.16,
+    envMapIntensity: 1.12,
   });
+  tagMaterial(horn, 'Mark horn | keratin', 'layered-keratin');
+  const hornGroove = horn.clone();
+  hornGroove.color.setHex(0x4d3d55);
+  hornGroove.roughness = 0.61;
+  hornGroove.clearcoat = 0.12;
+  hornGroove.iridescence = 0.04;
+  hornGroove.emissiveIntensity = 0.06;
+  tagMaterial(hornGroove, 'Mark horn | growth grooves', 'layered-keratin');
   const eye = new THREE.MeshStandardMaterial({
-    color: 0xe5dcff,
-    emissive: 0x8357ff,
-    emissiveIntensity: 2.7,
-    metalness: 0.08,
-    roughness: 0.08,
+    color: 0xc8b9cf,
+    emissive: 0x4f2d76,
+    emissiveIntensity: 1.05,
+    metalness: 0.04,
+    roughness: 0.16,
   });
+  tagMaterial(eye, 'Mark eyes | veiled glow', 'subtle-emissive');
+
+  installCoatMicrodetail(fur, new THREE.Color(0xd7bedf), 0.14, 1.7);
+  installCoatMicrodetail(shortFur, new THREE.Color(0xc9b1d2), 0.12, 3.1);
+  installCoatMicrodetail(darkFur, new THREE.Color(0x91779b), 0.1, 5.3);
+  installCoatMicrodetail(mane, new THREE.Color(0xd386e3), 0.16, 7.9);
 
   return {
     fur,
     shortFur,
     darkFur,
+    guardFur,
     mane,
+    maneEdge,
     skin,
     armor,
     armorEdge,
+    armorWear,
     bronze,
     leather,
     cloth,
     horn,
+    hornGroove,
     eye,
   };
 }
@@ -470,4 +567,57 @@ function smoothNoise(x: number, y: number, seed: number): number {
 function hash(x: number, y: number, seed: number): number {
   const value = Math.sin(x * 127.1 + y * 311.7 + seed * 74.7) * 43758.5453123;
   return value - Math.floor(value);
+}
+
+function installCoatMicrodetail(
+  material: THREE.MeshPhysicalMaterial,
+  fiberTint: THREE.Color,
+  strength: number,
+  seed: number,
+): void {
+  const tint = `${fiberTint.r.toFixed(5)}, ${fiberTint.g.toFixed(5)}, ${fiberTint.b.toFixed(5)}`;
+  const shaderKey = `mark-coat-microdetail:${tint}:${strength}:${seed}`;
+  material.userData.markCoatMicrodetail = { strength, seed };
+  material.customProgramCacheKey = () => shaderKey;
+  material.onBeforeCompile = (shader) => {
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <map_fragment>',
+      `#include <map_fragment>
+      float markFiberWave = sin((vMapUv.y * 238.0 + sin(vMapUv.x * 51.0 + ${seed.toFixed(
+        2,
+      )}) * 5.5) * 6.2831853);
+      float markCrossFiber = sin((vMapUv.x * 97.0 - vMapUv.y * 31.0 + ${seed.toFixed(
+        2,
+      )}) * 6.2831853);
+      float markFiber = smoothstep(0.78, 0.99, abs(markFiberWave)) *
+        (0.72 + 0.28 * abs(markCrossFiber));
+      float markClump = 0.5 + 0.5 * sin((vMapUv.x * 17.0 + vMapUv.y * 23.0 + ${seed.toFixed(
+        2,
+      )}) * 6.2831853);
+      float markCoatDetail = clamp(markFiber * 0.75 + markClump * 0.25, 0.0, 1.0);
+      diffuseColor.rgb *= mix(${(1 - strength).toFixed(4)}, ${(1 + strength).toFixed(
+        4,
+      )}, markCoatDetail);
+      diffuseColor.rgb = mix(diffuseColor.rgb, vec3(${tint}), markFiber * ${(
+        strength * 0.28
+      ).toFixed(4)});`,
+    );
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <roughnessmap_fragment>',
+      `#include <roughnessmap_fragment>
+      roughnessFactor *= mix(${(1 + strength * 0.4).toFixed(4)}, ${(1 - strength * 0.75).toFixed(
+        4,
+      )}, markFiber);`,
+    );
+  };
+}
+
+function tagMaterial<TMaterial extends THREE.Material>(
+  material: TMaterial,
+  name: string,
+  layer: string,
+): TMaterial {
+  material.name = name;
+  material.userData.markMaterialLayer = layer;
+  return material;
 }

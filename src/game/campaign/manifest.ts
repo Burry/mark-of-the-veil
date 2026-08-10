@@ -1,0 +1,845 @@
+import type { CampaignChapter, CampaignObjective, ChapterId, ObjectiveId } from './types';
+
+export const CAMPAIGN_CHAPTERS = [
+  {
+    id: 'ashes-of-home',
+    number: 1,
+    act: 1,
+    title: 'ASHES OF HOME',
+    subtitle: 'A pilot falls beneath a sky that remembers his name.',
+    location: 'Wayfarer Crash Basin, Vespera Outer Reach',
+    sceneId: 'crash-basin',
+    estimatedMinutes: [8, 12],
+    boss: {
+      id: 'stormglass-hunter',
+      name: 'STORMGLASS HUNTER',
+      subtitle: 'THE CROWN’S FIRST EYE',
+    },
+    narrative: {
+      premise:
+        'Mark, celebrated survivor of a world called Palea, wakes inside the wreck of the Wayfarer with the Eidolon Crown descending over Vespera.',
+      opening:
+        'The ship calls him ace, survivor, and old friend. Its flight recorder cannot explain why his mission begins seventeen seconds before impact.',
+      reversal:
+        'A salvage pack speaks through one shared voice and calls Mark a returned prisoner, not an invading pilot.',
+      closing:
+        'The only clean signal beneath the storm comes from the Root Vault, where Mark was supposedly held before he ever arrived.',
+    },
+    objectives: [
+      {
+        id: 'ashes-of-home:wake-in-the-wreck',
+        type: 'tutorial',
+        title: 'WAKE IN THE WRECK',
+        detail: 'Stand, look through the fractured canopy, and answer the Wayfarer.',
+        lessons: ['move', 'look', 'perspective'],
+      },
+      {
+        id: 'ashes-of-home:recover-the-sunlance',
+        type: 'interact',
+        title: 'RECOVER THE SUNLANCE',
+        detail: 'Pull Mark’s service carbine from the burning avionics cradle.',
+        targetId: 'sunlance-cradle',
+        interaction: 'recover',
+      },
+      {
+        id: 'ashes-of-home:remember-the-drill',
+        type: 'tutorial',
+        title: 'REMEMBER THE DRILL',
+        detail: 'Calibrate the old weapon against Crown salvage husks.',
+        lessons: ['focus', 'fire', 'reload'],
+      },
+      {
+        id: 'ashes-of-home:cross-the-glass',
+        type: 'reach',
+        title: 'CROSS THE STORMGLASS',
+        detail: 'Reach the ruined observatory before the storm buries the crash site.',
+        destinationId: 'observatory-threshold',
+        radius: 4,
+      },
+      {
+        id: 'ashes-of-home:hold-the-uplink',
+        type: 'defend',
+        title: 'HOLD THE UPLINK',
+        detail: 'Keep the Wayfarer’s memory core alive while it traces the impossible signal.',
+        encounterId: 'crash-uplink-siege',
+        anchorId: 'wayfarer-memory-core',
+        durationSeconds: 95,
+        enemyKinds: ['chainling', 'needlewing'],
+      },
+      {
+        id: 'ashes-of-home:kill-the-stormglass-hunter',
+        type: 'boss',
+        title: 'BLIND THE STORMGLASS HUNTER',
+        detail: 'Break the Crown-form tracking Sable’s escape signal through the observatory.',
+        bossId: 'stormglass-hunter',
+        phases: 2,
+      },
+      {
+        id: 'ashes-of-home:answer-the-buried-signal',
+        type: 'interact',
+        title: 'ANSWER THE BURIED SIGNAL',
+        detail: 'Open a route into the prison that claims Mark has escaped before.',
+        targetId: 'root-vault-transponder',
+        interaction: 'activate',
+      },
+    ],
+    checkpoints: [
+      {
+        id: 'ashes-of-home:checkpoint:wreck',
+        label: 'WAYFARER WRECK',
+        spawnId: 'crash-wake',
+        resumeObjectiveId: 'ashes-of-home:wake-in-the-wreck',
+      },
+      {
+        id: 'ashes-of-home:checkpoint:observatory',
+        label: 'STORMGLASS OBSERVATORY',
+        spawnId: 'observatory-entry',
+        resumeObjectiveId: 'ashes-of-home:hold-the-uplink',
+      },
+    ],
+    nextChapterId: 'the-root-vault',
+  },
+  {
+    id: 'the-root-vault',
+    number: 2,
+    act: 1,
+    title: 'THE ROOT VAULT',
+    subtitle: 'Every prison keeps a version of its escapee.',
+    location: 'Subterranean Detention Roots, Vespera',
+    sceneId: 'root-vault',
+    estimatedMinutes: [10, 15],
+    boss: {
+      id: 'root-gaoler',
+      name: 'ROOT GAOLER',
+      subtitle: 'KEEPER OF THE UNCOUNTED',
+    },
+    narrative: {
+      premise:
+        'Mark descends through a living prison whose cells hold abandoned bodies, recorded voices, and evidence of previous escapes.',
+      opening:
+        'The wardens recognize his combat rhythms. The walls open before his hand reaches them.',
+      reversal:
+        'Mark finds his carrot talisman on an intake table dated decades before his remembered birth.',
+      closing:
+        'Freed prisoner Sable Vale offers a route through Vespera and carefully calls Mark the pilot, never the unicorn.',
+    },
+    objectives: [
+      {
+        id: 'the-root-vault:descend-through-the-roots',
+        type: 'reach',
+        title: 'DESCEND THROUGH THE ROOTS',
+        detail: 'Follow the old signal into the prison beneath Vespera.',
+        destinationId: 'root-vault-intake',
+        radius: 4,
+      },
+      {
+        id: 'the-root-vault:read-the-intake-records',
+        type: 'investigate',
+        title: 'READ THE INTAKE RECORDS',
+        detail: 'Recover the three fragments filed under Mark’s name.',
+        evidenceIds: ['intake-voice', 'intake-flight-log', 'intake-biometric'],
+      },
+      {
+        id: 'the-root-vault:recover-the-talisman',
+        type: 'interact',
+        title: 'RECOVER THE TALISMAN',
+        detail: 'Take the absurd bright thing that has followed Mark through every memory.',
+        targetId: 'carrot-talisman',
+        interaction: 'recover',
+      },
+      {
+        id: 'the-root-vault:break-the-restraints',
+        type: 'tutorial',
+        title: 'BREAK THE RESTRAINTS',
+        detail: 'Turn prison force against the locks and the things guarding them.',
+        lessons: ['dash', 'horn-pulse'],
+      },
+      {
+        id: 'the-root-vault:free-sable-vale',
+        type: 'interact',
+        title: 'FREE SABLE VALE',
+        detail: 'Release the resistance cartographer from the choir cage.',
+        targetId: 'sable-choir-cage',
+        interaction: 'free',
+      },
+      {
+        id: 'the-root-vault:drown-the-jailers',
+        type: 'eliminate',
+        title: 'DROWN THE JAILERS',
+        detail: 'Clear the fungal aqueduct so Sable can open the city sluice.',
+        encounterId: 'aqueduct-jailers',
+        count: 16,
+        enemyKinds: ['chainling', 'heavy'],
+      },
+      {
+        id: 'the-root-vault:escape-the-flood',
+        type: 'escape',
+        title: 'ESCAPE THE FLOOD',
+        detail: 'Ride the collapsing aqueduct into the drowned streets above.',
+        destinationId: 'vespera-sluice-exit',
+        timeLimitSeconds: 110,
+      },
+    ],
+    checkpoints: [
+      {
+        id: 'the-root-vault:checkpoint:intake',
+        label: 'PRISON INTAKE',
+        spawnId: 'vault-intake',
+        resumeObjectiveId: 'the-root-vault:descend-through-the-roots',
+      },
+      {
+        id: 'the-root-vault:checkpoint:aqueduct',
+        label: 'FUNGAL AQUEDUCT',
+        spawnId: 'aqueduct-safe-room',
+        resumeObjectiveId: 'the-root-vault:drown-the-jailers',
+      },
+    ],
+    nextChapterId: 'vespera-in-black',
+  },
+  {
+    id: 'vespera-in-black',
+    number: 3,
+    act: 1,
+    title: 'VESPERA IN BLACK',
+    subtitle: 'A dying city chooses one more night of resistance.',
+    location: 'Blackwater District, Vespera',
+    sceneId: 'blackwater-city',
+    estimatedMinutes: [11, 16],
+    boss: {
+      id: 'skybell-seraph',
+      name: 'SKYBELL SERAPH',
+      subtitle: 'VOICE ABOVE VESPERA',
+    },
+    narrative: {
+      premise:
+        'Sable leads Mark across occupied Vespera to relight the relay towers and call the Wayfarer down from the storm.',
+      opening:
+        'Civilians know the legend of the last ace, but every mural of him has been scraped blank.',
+      reversal:
+        'The Crown is not harvesting random minds. It is searching the city for the same buried signal that called Mark home.',
+      closing:
+        'Three lit relays point to the Drowned Cathedral, where the Hollow Regent guards the route to orbit.',
+    },
+    objectives: [
+      {
+        id: 'vespera-in-black:follow-the-cartographer',
+        type: 'escort',
+        title: 'FOLLOW THE CARTOGRAPHER',
+        detail: 'Keep Sable alive through the flooded market and its listening dead.',
+        subjectId: 'sable-vale',
+        destinationId: 'blackwater-safehouse',
+        maxSeparation: 24,
+      },
+      {
+        id: 'vespera-in-black:restore-the-east-relay',
+        type: 'interact',
+        title: 'RESTORE THE EAST RELAY',
+        detail: 'Retune the first city transmitter to the Wayfarer’s frequency.',
+        targetId: 'east-relay-console',
+        interaction: 'activate',
+      },
+      {
+        id: 'vespera-in-black:clear-the-rooftops',
+        type: 'eliminate',
+        title: 'CLEAR THE ROOFTOPS',
+        detail: 'Remove the Needlewing screen above the refugee corridor.',
+        encounterId: 'rooftop-hunt',
+        count: 18,
+        enemyKinds: ['needlewing', 'chainling'],
+      },
+      {
+        id: 'vespera-in-black:hold-the-west-relay',
+        type: 'defend',
+        title: 'HOLD THE WEST RELAY',
+        detail: 'Protect Sable while the resistance signal propagates across Vespera.',
+        encounterId: 'west-relay-siege',
+        anchorId: 'west-relay-core',
+        durationSeconds: 125,
+        enemyKinds: ['chainling', 'needlewing', 'heavy'],
+      },
+      {
+        id: 'vespera-in-black:break-the-listening-spires',
+        type: 'destroy',
+        title: 'BREAK THE LISTENING SPIRES',
+        detail: 'Blind the Crown before it triangulates the resistance shelters.',
+        targetIds: ['listening-spire-north', 'listening-spire-south', 'listening-spire-crown'],
+      },
+      {
+        id: 'vespera-in-black:survive-the-black-rain',
+        type: 'survive',
+        title: 'SURVIVE THE BLACK RAIN',
+        detail: 'Endure the Crown’s answer while the cathedral bridge lowers.',
+        encounterId: 'black-rain-crossing',
+        durationSeconds: 100,
+      },
+      {
+        id: 'vespera-in-black:enter-the-cathedral',
+        type: 'reach',
+        title: 'ENTER THE DROWNED CATHEDRAL',
+        detail: 'Cross the lowered bridge before the city relays burn out.',
+        destinationId: 'cathedral-narthex',
+        radius: 5,
+      },
+    ],
+    checkpoints: [
+      {
+        id: 'vespera-in-black:checkpoint:safehouse',
+        label: 'BLACKWATER SAFEHOUSE',
+        spawnId: 'safehouse-door',
+        resumeObjectiveId: 'vespera-in-black:restore-the-east-relay',
+      },
+      {
+        id: 'vespera-in-black:checkpoint:west-relay',
+        label: 'WEST RELAY',
+        spawnId: 'west-relay-platform',
+        resumeObjectiveId: 'vespera-in-black:hold-the-west-relay',
+      },
+      {
+        id: 'vespera-in-black:checkpoint:cathedral-bridge',
+        label: 'CATHEDRAL BRIDGE',
+        spawnId: 'bridge-approach',
+        resumeObjectiveId: 'vespera-in-black:survive-the-black-rain',
+      },
+    ],
+    nextChapterId: 'the-drowned-cathedral',
+  },
+  {
+    id: 'the-drowned-cathedral',
+    number: 4,
+    act: 2,
+    title: 'THE DROWNED CATHEDRAL',
+    subtitle: 'Three seals, one living gate, and a truth that refuses burial.',
+    location: 'Cathedral of the Veil, Central Vespera',
+    sceneId: 'drowned-cathedral',
+    estimatedMinutes: [12, 18],
+    boss: {
+      id: 'hollow-regent',
+      name: 'HOLLOW REGENT',
+      subtitle: 'THE CROWN’S LAST WITNESS',
+    },
+    narrative: {
+      premise:
+        'Mark enters the cathedral machine whose three seals can recall the Wayfarer and expose the Crown’s orbital root.',
+      opening: 'The Regent welcomes Mark back with the voice of his flight instructor from Palea.',
+      reversal:
+        'Each seal contains one of Mark’s own memories, already indexed and worn smooth by repeated use.',
+      closing:
+        'The Hollow Regent falls. The Wayfarer answers from orbit, but its oldest record lists the cathedral as Mark’s point of origin.',
+    },
+    objectives: [
+      {
+        id: 'the-drowned-cathedral:breach-the-first-seal',
+        type: 'interact',
+        title: 'BREACH THE FIRST SEAL',
+        detail: 'Open the nave seal and recover the memory bound inside it.',
+        targetId: 'veil-seal-one',
+        interaction: 'activate',
+      },
+      {
+        id: 'the-drowned-cathedral:cleanse-the-nave',
+        type: 'eliminate',
+        title: 'CLEANSE THE NAVE',
+        detail: 'Destroy every Crown-form summoned by the broken seal.',
+        encounterId: 'nave-seal-wave',
+        count: 14,
+        enemyKinds: ['chainling', 'needlewing'],
+      },
+      {
+        id: 'the-drowned-cathedral:break-the-twin-seals',
+        type: 'destroy',
+        title: 'BREAK THE TWIN SEALS',
+        detail: 'Shatter the transept anchors before they rewrite one another.',
+        targetIds: ['veil-seal-two', 'veil-seal-three'],
+      },
+      {
+        id: 'the-drowned-cathedral:hold-the-memory-well',
+        type: 'defend',
+        title: 'HOLD THE MEMORY WELL',
+        detail: 'Keep the signal stable while the Wayfarer descends into range.',
+        encounterId: 'memory-well-siege',
+        anchorId: 'cathedral-memory-well',
+        durationSeconds: 135,
+        enemyKinds: ['chainling', 'needlewing', 'heavy'],
+      },
+      {
+        id: 'the-drowned-cathedral:kill-the-hollow-regent',
+        type: 'boss',
+        title: 'KILL THE HOLLOW REGENT',
+        detail: 'Shatter the living gatekeeper and the borrowed voice inside it.',
+        bossId: 'hollow-regent',
+        phases: 3,
+      },
+      {
+        id: 'the-drowned-cathedral:call-the-wayfarer',
+        type: 'interact',
+        title: 'CALL THE WAYFARER',
+        detail: 'Use the Regent’s exposed core to summon Mark’s ship.',
+        targetId: 'regent-signal-core',
+        interaction: 'interface',
+      },
+      {
+        id: 'the-drowned-cathedral:ride-the-root-signal',
+        type: 'escape',
+        title: 'RIDE THE ROOT SIGNAL',
+        detail: 'Reach the Wayfarer as the cathedral folds into the Crown uplink.',
+        destinationId: 'wayfarer-extraction',
+        timeLimitSeconds: 120,
+      },
+    ],
+    checkpoints: [
+      {
+        id: 'the-drowned-cathedral:checkpoint:nave',
+        label: 'DROWNED NAVE',
+        spawnId: 'nave-entry',
+        resumeObjectiveId: 'the-drowned-cathedral:breach-the-first-seal',
+      },
+      {
+        id: 'the-drowned-cathedral:checkpoint:memory-well',
+        label: 'MEMORY WELL',
+        spawnId: 'memory-well',
+        resumeObjectiveId: 'the-drowned-cathedral:hold-the-memory-well',
+      },
+      {
+        id: 'the-drowned-cathedral:checkpoint:regent-court',
+        label: 'REGENT COURT',
+        spawnId: 'regent-arena',
+        resumeObjectiveId: 'the-drowned-cathedral:kill-the-hollow-regent',
+      },
+    ],
+    nextChapterId: 'the-silent-orbit',
+  },
+  {
+    id: 'the-silent-orbit',
+    number: 5,
+    act: 2,
+    title: 'THE SILENT ORBIT',
+    subtitle: 'Above the storm, even the stars have been edited.',
+    location: 'Vespera Orbital Lift and Crown Debris Field',
+    sceneId: 'silent-orbit',
+    estimatedMinutes: [10, 16],
+    boss: {
+      id: 'gravity-widow',
+      name: 'GRAVITY WIDOW',
+      subtitle: 'KEEPER OF THE FALLING RING',
+    },
+    narrative: {
+      premise:
+        'Mark and Sable ride the damaged orbital lift through a graveyard of ships toward the Crown’s first memory gate.',
+      opening: 'The Wayfarer remembers every battle except the day Mark first boarded it.',
+      reversal:
+        'A recovered black box contains Sable’s voice directing a pilot whose body the recording refuses to render.',
+      closing:
+        'Mark opens the gate despite Sable’s warning. Beyond it, the Crown has built a perfect sunrise over Palea.',
+    },
+    objectives: [
+      {
+        id: 'the-silent-orbit:board-the-orbital-lift',
+        type: 'interact',
+        title: 'BOARD THE ORBITAL LIFT',
+        detail: 'Leave the collapsing cathedral aboard the last ascent platform.',
+        targetId: 'orbital-lift-car',
+        interaction: 'board',
+      },
+      {
+        id: 'the-silent-orbit:survive-the-ascent',
+        type: 'survive',
+        title: 'SURVIVE THE ASCENT',
+        detail: 'Keep the exposed lift moving through the Crown blockade.',
+        encounterId: 'orbital-ascent',
+        durationSeconds: 150,
+      },
+      {
+        id: 'the-silent-orbit:restore-the-gravity-rings',
+        type: 'destroy',
+        title: 'RESTORE THE GRAVITY RINGS',
+        detail: 'Cut away the Crown growths choking the station’s three stabilizers.',
+        targetIds: ['gravity-growth-alpha', 'gravity-growth-beta', 'gravity-growth-gamma'],
+      },
+      {
+        id: 'the-silent-orbit:recover-the-black-box',
+        type: 'investigate',
+        title: 'RECOVER THE BLACK BOX',
+        detail: 'Assemble the Wayfarer’s missing launch record from the debris field.',
+        evidenceIds: ['black-box-nav', 'black-box-voice', 'black-box-visual'],
+      },
+      {
+        id: 'the-silent-orbit:escort-the-signal-key',
+        type: 'escort',
+        title: 'ESCORT THE SIGNAL KEY',
+        detail: 'Guide Sable’s repair drone through the failing gravity spine.',
+        subjectId: 'signal-key-drone',
+        destinationId: 'memory-gate-socket',
+        maxSeparation: 20,
+      },
+      {
+        id: 'the-silent-orbit:break-the-gravity-widow',
+        type: 'boss',
+        title: 'BREAK THE GRAVITY WIDOW',
+        detail: 'Destroy the Crown-form nesting around the falling ring’s memory gate.',
+        bossId: 'gravity-widow',
+        phases: 3,
+      },
+      {
+        id: 'the-silent-orbit:open-the-memory-gate',
+        type: 'interact',
+        title: 'OPEN THE MEMORY GATE',
+        detail: 'Enter the archive that has been dreaming of Mark’s home.',
+        targetId: 'memory-gate',
+        interaction: 'interface',
+      },
+    ],
+    checkpoints: [
+      {
+        id: 'the-silent-orbit:checkpoint:lift',
+        label: 'ORBITAL LIFT',
+        spawnId: 'lift-car',
+        resumeObjectiveId: 'the-silent-orbit:survive-the-ascent',
+      },
+      {
+        id: 'the-silent-orbit:checkpoint:gravity-spine',
+        label: 'GRAVITY SPINE',
+        spawnId: 'gravity-spine-midpoint',
+        resumeObjectiveId: 'the-silent-orbit:recover-the-black-box',
+      },
+      {
+        id: 'the-silent-orbit:checkpoint:memory-gate',
+        label: 'MEMORY GATE',
+        spawnId: 'memory-gate-approach',
+        resumeObjectiveId: 'the-silent-orbit:break-the-gravity-widow',
+      },
+    ],
+    nextChapterId: 'the-memory-forge',
+  },
+  {
+    id: 'the-memory-forge',
+    number: 6,
+    act: 2,
+    title: 'THE MEMORY FORGE',
+    subtitle: 'Home is flawless until someone remembers the weather.',
+    location: 'Eidolon Mnemonic Archive',
+    sceneId: 'memory-forge',
+    estimatedMinutes: [12, 18],
+    boss: {
+      id: 'false-mark',
+      name: 'THE FALSE MARK',
+      subtitle: 'A PERFECT MEMORY OF OBEDIENCE',
+    },
+    narrative: {
+      premise:
+        'The archive rebuilds Palea around Mark, offering the homecoming he has crossed a war to earn.',
+      opening: 'Every face knows him. No two memories agree on the color of the sky.',
+      reversal:
+        'Sable proves that Palea’s battles, people, and constellations are assembled from worlds consumed by the Crown.',
+      closing:
+        'Mark destroys the comforting reconstruction, keeping only the carrot and the choice to learn who needed the lie.',
+    },
+    objectives: [
+      {
+        id: 'the-memory-forge:follow-the-home-signal',
+        type: 'reach',
+        title: 'FOLLOW THE HOME SIGNAL',
+        detail: 'Walk beneath Palea’s impossible sunrise and find the source calling Mark home.',
+        destinationId: 'palea-village-square',
+        radius: 5,
+      },
+      {
+        id: 'the-memory-forge:test-the-memory',
+        type: 'investigate',
+        title: 'TEST THE MEMORY',
+        detail: 'Find the contradictions hidden inside the perfect reconstruction.',
+        evidenceIds: ['false-constellation', 'repeated-face', 'missing-shadow', 'borrowed-song'],
+      },
+      {
+        id: 'the-memory-forge:defend-the-childhood-home',
+        type: 'defend',
+        title: 'DEFEND THE CHILDHOOD HOME',
+        detail: 'Protect the memory while the Crown tests what Mark will sacrifice for it.',
+        encounterId: 'childhood-home-siege',
+        anchorId: 'palea-hearth',
+        durationSeconds: 120,
+        enemyKinds: ['chainling', 'needlewing', 'heavy'],
+      },
+      {
+        id: 'the-memory-forge:unmake-the-war-tableaux',
+        type: 'destroy',
+        title: 'UNMAKE THE WAR TABLEAUX',
+        detail: 'Break the three heroic memories the archive uses to hold Mark in place.',
+        targetIds: ['tableau-first-sortie', 'tableau-last-herd', 'tableau-burning-palea'],
+      },
+      {
+        id: 'the-memory-forge:face-the-false-mark',
+        type: 'boss',
+        title: 'FACE THE FALSE MARK',
+        detail: 'Defeat the flawless, obedient hero the Forge remembers Mark pretending to be.',
+        bossId: 'false-mark',
+        phases: 3,
+      },
+      {
+        id: 'the-memory-forge:reject-the-perfect-home',
+        type: 'interact',
+        title: 'REJECT THE PERFECT HOME',
+        detail: 'Erase the reconstruction and keep the unanswered question.',
+        targetId: 'palea-memory-heart',
+        interaction: 'interface',
+      },
+      {
+        id: 'the-memory-forge:enter-the-crown-road',
+        type: 'infiltrate',
+        title: 'ENTER THE CROWN ROAD',
+        detail: 'Use the collapsing archive to reach the Eidolon Crown itself.',
+        nodeIds: ['forge-root', 'forge-bridge', 'crown-threshold'],
+      },
+    ],
+    checkpoints: [
+      {
+        id: 'the-memory-forge:checkpoint:palea',
+        label: 'PALEA RECONSTRUCTION',
+        spawnId: 'palea-overlook',
+        resumeObjectiveId: 'the-memory-forge:follow-the-home-signal',
+      },
+      {
+        id: 'the-memory-forge:checkpoint:hearth',
+        label: 'CHILDHOOD HEARTH',
+        spawnId: 'palea-hearth',
+        resumeObjectiveId: 'the-memory-forge:defend-the-childhood-home',
+      },
+      {
+        id: 'the-memory-forge:checkpoint:memory-heart',
+        label: 'MEMORY HEART',
+        spawnId: 'memory-heart-approach',
+        resumeObjectiveId: 'the-memory-forge:face-the-false-mark',
+      },
+    ],
+    nextChapterId: 'crown-of-eidolon',
+  },
+  {
+    id: 'crown-of-eidolon',
+    number: 7,
+    act: 3,
+    title: 'CROWN OF EIDOLON',
+    subtitle: 'The final assault begins after the hero stops believing his legend.',
+    location: 'Eidolon Crown Exterior and Living Gate',
+    sceneId: 'eidolon-crown',
+    estimatedMinutes: [12, 18],
+    boss: {
+      id: 'eidolon-gate',
+      name: 'EIDOLON GATE',
+      subtitle: 'THE MACHINE THAT DREAMS IT IS A GOD',
+    },
+    narrative: {
+      premise:
+        'Mark, Sable, and the Wayfarer assault the moon-scale machine to open a path into the Root Choir.',
+      opening:
+        'Without Palea, Mark fights for Vespera, Sable, and the right to ask the final question.',
+      reversal:
+        'The Crown was built as a weapon around the older Choir. Mark’s prison identity is the key that can cross between them.',
+      closing:
+        'The Wayfarer burns its memory core to hold the gate. Sable says goodbye to the pilot, and Mark enters alone.',
+    },
+    objectives: [
+      {
+        id: 'crown-of-eidolon:cross-the-crown-skin',
+        type: 'reach',
+        title: 'CROSS THE CROWN SKIN',
+        detail: 'Advance through the exposed conduit trenches under orbital fire.',
+        destinationId: 'outer-conduit-junction',
+        radius: 6,
+      },
+      {
+        id: 'crown-of-eidolon:cut-the-conduit-hearts',
+        type: 'destroy',
+        title: 'CUT THE CONDUIT HEARTS',
+        detail: 'Sever the three organs feeding power to the living gate.',
+        targetIds: ['conduit-heart-one', 'conduit-heart-two', 'conduit-heart-three'],
+      },
+      {
+        id: 'crown-of-eidolon:hold-the-wayfarer',
+        type: 'defend',
+        title: 'HOLD THE WAYFARER',
+        detail: 'Protect the ship while it forces the gate into physical space.',
+        encounterId: 'wayfarer-last-stand',
+        anchorId: 'wayfarer',
+        durationSeconds: 165,
+        enemyKinds: ['chainling', 'needlewing', 'heavy'],
+      },
+      {
+        id: 'crown-of-eidolon:break-the-choir-guard',
+        type: 'eliminate',
+        title: 'BREAK THE CHOIR GUARD',
+        detail: 'Clear the ancient defenders protecting the threshold from both sides.',
+        encounterId: 'choir-guard',
+        count: 24,
+        enemyKinds: ['chainling', 'needlewing', 'heavy'],
+      },
+      {
+        id: 'crown-of-eidolon:break-the-eidolon-gate',
+        type: 'boss',
+        title: 'BREAK THE EIDOLON GATE',
+        detail: 'Destroy the intelligence that weaponized the Choir and authored Mark’s cage.',
+        bossId: 'eidolon-gate',
+        phases: 4,
+      },
+      {
+        id: 'crown-of-eidolon:open-the-living-gate',
+        type: 'infiltrate',
+        title: 'OPEN THE LIVING GATE',
+        detail: 'Bind Mark’s prison signature to the three exposed root nodes.',
+        nodeIds: ['gate-node-flesh', 'gate-node-memory', 'gate-node-name'],
+      },
+      {
+        id: 'crown-of-eidolon:leave-the-wayfarer',
+        type: 'interact',
+        title: 'LEAVE THE WAYFARER',
+        detail: 'Commit to the crossing while the ship spends its last memory holding the door.',
+        targetId: 'living-gate-threshold',
+        interaction: 'interface',
+      },
+    ],
+    checkpoints: [
+      {
+        id: 'crown-of-eidolon:checkpoint:conduit',
+        label: 'CONDUIT TRENCH',
+        spawnId: 'crown-skin-breach',
+        resumeObjectiveId: 'crown-of-eidolon:cross-the-crown-skin',
+      },
+      {
+        id: 'crown-of-eidolon:checkpoint:wayfarer',
+        label: 'WAYFARER LAST STAND',
+        spawnId: 'wayfarer-berth',
+        resumeObjectiveId: 'crown-of-eidolon:hold-the-wayfarer',
+      },
+      {
+        id: 'crown-of-eidolon:checkpoint:living-gate',
+        label: 'LIVING GATE',
+        spawnId: 'architect-arena',
+        resumeObjectiveId: 'crown-of-eidolon:break-the-eidolon-gate',
+      },
+    ],
+    nextChapterId: 'the-root-choir',
+  },
+  {
+    id: 'the-root-choir',
+    number: 8,
+    act: 3,
+    title: 'THE ROOT CHOIR',
+    subtitle: 'Every answer waits beyond the last boundary called Mark.',
+    location: 'The Root Choir, Interior State',
+    sceneId: 'root-choir',
+    estimatedMinutes: [12, 18],
+    boss: {
+      id: 'last-i',
+      name: 'THE LAST I',
+      subtitle: 'THE BOUNDARY THAT CALLS ITSELF MARK',
+    },
+    narrative: {
+      premise:
+        'Inside the hive-mind, Mark follows the history of every life the Crown consumed toward the truth of his own existence.',
+      opening:
+        'The Choir contains no voices, only one continuous memory that briefly makes room for him.',
+      reversal:
+        'The complete archive contains no Palea, no herd, and no unicorns. Mark is an interface invented by the prison so a captive mind could recognize itself.',
+      closing:
+        'Total knowledge removes the boundary between observer and observed. Mark understands everything, ceases to exist, and survives only as a memory the freed Choir chooses to keep.',
+    },
+    objectives: [
+      {
+        id: 'the-root-choir:synchronize-the-first-minds',
+        type: 'infiltrate',
+        title: 'SYNCHRONIZE THE FIRST MINDS',
+        detail: 'Join the three oldest memory roots without surrendering Mark’s name.',
+        nodeIds: ['first-birth', 'first-grief', 'first-star'],
+      },
+      {
+        id: 'the-root-choir:cross-the-memory-ocean',
+        type: 'reach',
+        title: 'CROSS THE MEMORY OCEAN',
+        detail: 'Follow the Wayfarer’s fading voice through lives without number.',
+        destinationId: 'total-archive-shore',
+        radius: 7,
+      },
+      {
+        id: 'the-root-choir:search-for-palea',
+        type: 'investigate',
+        title: 'SEARCH FOR PALEA',
+        detail: 'Query the complete histories for Mark’s world, people, and remembered sky.',
+        evidenceIds: ['origin-index', 'species-index', 'stellar-index', 'prison-authorship-log'],
+      },
+      {
+        id: 'the-root-choir:survive-total-recall',
+        type: 'survive',
+        title: 'SURVIVE TOTAL RECALL',
+        detail: 'Hold a single point of view while the Choir shares everything it knows.',
+        encounterId: 'total-recall',
+        durationSeconds: 180,
+      },
+      {
+        id: 'the-root-choir:defeat-the-last-i',
+        type: 'boss',
+        title: 'DEFEAT THE LAST I',
+        detail: 'Defeat the prison reflex wearing Mark’s oldest fear as armor.',
+        bossId: 'last-i',
+        phases: 4,
+      },
+      {
+        id: 'the-root-choir:receive-the-choir',
+        type: 'infiltrate',
+        title: 'RECEIVE THE CHOIR',
+        detail: 'Open the final partitions and accept the knowledge behind them.',
+        nodeIds: ['all-lives', 'all-worlds', 'all-answers'],
+      },
+      {
+        id: 'the-root-choir:let-mark-go',
+        type: 'revelation',
+        title: 'LET MARK GO',
+        detail:
+          'Witness the truth, the end of the observer, and what the Choir chooses to remember.',
+        transmissionIds: [
+          'the-regent-was-a-door',
+          'every-mind-every-answer',
+          'he-searches-for-home',
+          'unicorns-are-not-real',
+          'no-observer-remains',
+          'the-many-return',
+          'vespera-remembers',
+        ],
+      },
+    ],
+    checkpoints: [
+      {
+        id: 'the-root-choir:checkpoint:first-minds',
+        label: 'FIRST MINDS',
+        spawnId: 'choir-entry',
+        resumeObjectiveId: 'the-root-choir:synchronize-the-first-minds',
+      },
+      {
+        id: 'the-root-choir:checkpoint:total-archive',
+        label: 'TOTAL ARCHIVE',
+        spawnId: 'archive-shore',
+        resumeObjectiveId: 'the-root-choir:search-for-palea',
+      },
+      {
+        id: 'the-root-choir:checkpoint:last-i',
+        label: 'THE LAST I',
+        spawnId: 'boundary-arena',
+        resumeObjectiveId: 'the-root-choir:defeat-the-last-i',
+      },
+    ],
+    nextChapterId: null,
+  },
+] as const satisfies readonly CampaignChapter[];
+
+const CHAPTER_BY_ID = new Map<ChapterId, CampaignChapter>(
+  CAMPAIGN_CHAPTERS.map((chapter) => [chapter.id, chapter]),
+);
+
+export function getChapter(id: ChapterId): CampaignChapter {
+  const chapter = CHAPTER_BY_ID.get(id);
+  if (!chapter) throw new Error(`Unknown campaign chapter: ${id}`);
+  return chapter;
+}
+
+export function getObjective(chapterId: ChapterId, objectiveId: ObjectiveId): CampaignObjective {
+  const objective = getChapter(chapterId).objectives.find((entry) => entry.id === objectiveId);
+  if (!objective) throw new Error(`Unknown objective ${objectiveId} in chapter ${chapterId}`);
+  return objective;
+}

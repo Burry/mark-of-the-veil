@@ -1,5 +1,13 @@
 import type { GameSettings } from '../types/GameTypes';
 import { clamp01, deriveAdaptiveAudioMix, deterministicUnit } from './audioMath';
+import {
+  CHAPTER_AUDIO_PROFILES,
+  DEFAULT_CHAPTER_AUDIO_ID,
+  chapterMotifFrequency,
+  chapterTempo,
+  isChapterAccent,
+} from './chapterAudio';
+import type { ChapterAudioId, ChapterAudioProfile } from './chapterAudio';
 import type { AudioEvent, AudioSpatialPosition, FeedbackSettingsSource } from './types';
 
 const SILENCE = 0.0001;
@@ -74,13 +82,23 @@ export class AudioDirector {
   private droneGain: GainNode | null = null;
   private choirGain: GainNode | null = null;
   private musicFilter: BiquadFilterNode | null = null;
+  private readonly droneOscillators: OscillatorNode[] = [];
+  private readonly choirOscillators: OscillatorNode[] = [];
+  private readonly choirFormants: BiquadFilterNode[] = [];
+  private windSource: AudioBufferSourceNode | null = null;
+  private windGain: GainNode | null = null;
+  private machineryOscillator: OscillatorNode | null = null;
+  private machineryGain: GainNode | null = null;
   private noiseBuffer: AudioBuffer | null = null;
   private readonly activeSources = new Set<AudioScheduledSourceNode>();
   private scheduler: ReturnType<typeof setInterval> | null = null;
   private startPromise: Promise<void> | null = null;
   private nextBeatAt = 0;
   private beat = 0;
+  private motifPhrase = 0;
   private intensity = 0.18;
+  private chapterId: ChapterAudioId = DEFAULT_CHAPTER_AUDIO_ID;
+  private chapterProfile: ChapterAudioProfile = CHAPTER_AUDIO_PROFILES[DEFAULT_CHAPTER_AUDIO_ID];
   private paused = false;
   private disposed = false;
 
@@ -108,6 +126,25 @@ export class AudioDirector {
   updateSettings(settings: GameSettings): void {
     this.settings = settings;
     this.applyMix(settings);
+  }
+
+  /**
+   * Changes the authored score and ambience identity without rebuilding the Web Audio graph.
+   * Calling this before start() selects the initial chapter; calling it during play crossfades the
+   * continuous voices and resets the procedural phrase at the next scheduling boundary.
+   */
+  setChapter(chapterId: ChapterAudioId): void {
+    if (this.disposed || chapterId === this.chapterId) return;
+    this.chapterId = chapterId;
+    this.chapterProfile = CHAPTER_AUDIO_PROFILES[chapterId];
+    this.beat = 0;
+    this.motifPhrase = 0;
+
+    const context = this.context;
+    if (!context || context.state === 'closed') return;
+    this.nextBeatAt = Math.max(this.nextBeatAt, context.currentTime + 0.12);
+    this.applyChapterProfile(context.currentTime);
+    this.applyMix(this.currentSettings());
   }
 
   setIntensity(intensity: number): void {
@@ -564,6 +601,13 @@ export class AudioDirector {
     this.droneGain = null;
     this.choirGain = null;
     this.musicFilter = null;
+    this.droneOscillators.length = 0;
+    this.choirOscillators.length = 0;
+    this.choirFormants.length = 0;
+    this.windSource = null;
+    this.windGain = null;
+    this.machineryOscillator = null;
+    this.machineryGain = null;
     this.noiseBuffer = null;
     if (context && context.state !== 'closed') void context.close().catch(() => undefined);
   }
@@ -608,7 +652,7 @@ export class AudioDirector {
     compressor.release.value = 0.18;
     musicFilter.type = 'lowpass';
     musicFilter.Q.value = 0.55;
-    reverb.buffer = this.createImpulseResponse(context, 2.25, 2.7, 0x7665696c);
+    reverb.buffer = this.createImpulseResponse(context, 2.25, 2.7, this.chapterProfile.seed);
 
     drone.connect(musicFilter);
     choir.connect(musicFilter);
@@ -638,61 +682,125 @@ export class AudioDirector {
   private createSoundscape(context: AudioContext): void {
     if (!this.droneGain || !this.choirGain || !this.ambienceBus || !this.noiseBuffer) return;
 
-    [36.71, 55, 73.42].forEach((frequency, index) => {
+    const profile = this.chapterProfile;
+
+    profile.harmony.droneRatios.forEach((ratio, index) => {
       const oscillator = context.createOscillator();
       const voiceGain = context.createGain();
       oscillator.type = index === 0 ? 'sine' : 'triangle';
-      oscillator.frequency.value = frequency;
-      oscillator.detune.value = index === 1 ? -7 : index === 2 ? 5 : 0;
+      oscillator.frequency.value = profile.harmony.rootHz * ratio;
+      oscillator.detune.value = profile.harmony.droneDetune[index];
       voiceGain.gain.value = [0.44, 0.2, 0.12][index] ?? 0.1;
       oscillator.connect(voiceGain);
       voiceGain.connect(this.droneGain as GainNode);
+      this.droneOscillators.push(oscillator);
       this.trackSource(oscillator, [voiceGain]);
       oscillator.start();
     });
 
-    [110, 146.83, 164.81, 220].forEach((frequency, index) => {
+    profile.harmony.choirRatios.forEach((ratio, index) => {
       const oscillator = context.createOscillator();
       const formant = context.createBiquadFilter();
       const voiceGain = context.createGain();
       oscillator.type = index % 2 === 0 ? 'sine' : 'triangle';
-      oscillator.frequency.value = frequency;
-      oscillator.detune.value = [-11, 7, -4, 13][index] ?? 0;
+      oscillator.frequency.value = profile.harmony.rootHz * ratio;
+      oscillator.detune.value = profile.harmony.choirDetune[index];
       formant.type = 'bandpass';
-      formant.frequency.value = index % 2 === 0 ? 740 : 1_150;
+      formant.frequency.value = profile.harmony.formantsHz[index];
       formant.Q.value = 1.15;
       voiceGain.gain.value = 0.24;
       oscillator.connect(formant);
       formant.connect(voiceGain);
       voiceGain.connect(this.choirGain as GainNode);
+      this.choirOscillators.push(oscillator);
+      this.choirFormants.push(formant);
       this.trackSource(oscillator, [formant, voiceGain]);
       oscillator.start();
     });
 
-    const wind = context.createBufferSource();
-    const windFilter = context.createBiquadFilter();
-    const windGain = context.createGain();
-    wind.buffer = this.noiseBuffer;
-    wind.loop = true;
-    windFilter.type = 'bandpass';
-    windFilter.frequency.value = 310;
-    windFilter.Q.value = 0.32;
-    windGain.gain.value = 0.16;
-    wind.connect(windFilter);
-    windFilter.connect(windGain);
-    windGain.connect(this.ambienceBus);
-    this.trackSource(wind, [windFilter, windGain]);
-    wind.start(0, 0.37);
+    this.startAmbienceNoise(profile, context.currentTime, false);
 
     const machinery = context.createOscillator();
     const machineryGain = context.createGain();
     machinery.type = 'sine';
-    machinery.frequency.value = 28;
-    machineryGain.gain.value = 0.1;
+    machinery.frequency.value = profile.ambience.machineryHz;
+    machineryGain.gain.value = profile.ambience.machineryGain;
     machinery.connect(machineryGain);
     machineryGain.connect(this.ambienceBus);
+    this.machineryOscillator = machinery;
+    this.machineryGain = machineryGain;
     this.trackSource(machinery, [machineryGain]);
     machinery.start();
+  }
+
+  private startAmbienceNoise(profile: ChapterAudioProfile, at: number, crossfade: boolean): void {
+    const context = this.context;
+    const destination = this.ambienceBus;
+    const buffer = this.noiseBuffer;
+    if (!context || !destination || !buffer) return;
+
+    const previousSource = this.windSource;
+    const previousGain = this.windGain;
+    const source = context.createBufferSource();
+    const filter = context.createBiquadFilter();
+    const gain = context.createGain();
+    source.buffer = buffer;
+    source.loop = true;
+    source.playbackRate.value = profile.ambience.playbackRate;
+    filter.type = profile.ambience.filterType;
+    filter.frequency.value = profile.ambience.filterHz;
+    filter.Q.value = profile.ambience.q;
+    gain.gain.value = crossfade ? SILENCE : profile.ambience.noiseGain;
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(destination);
+    this.trackSource(source, [filter, gain]);
+    source.start(at, deterministicUnit(profile.seed + this.beat) * 1.8);
+
+    if (crossfade) {
+      setAudioParam(gain.gain, profile.ambience.noiseGain, at + 0.01, 0.24);
+      if (previousGain) setAudioParam(previousGain.gain, SILENCE, at, 0.18);
+      if (previousSource) {
+        try {
+          previousSource.stop(at + 1.4);
+        } catch {
+          // A rapid chapter transition may encounter a source already scheduled to stop.
+        }
+      }
+    }
+
+    this.windSource = source;
+    this.windGain = gain;
+  }
+
+  private applyChapterProfile(at: number): void {
+    const profile = this.chapterProfile;
+    for (const [index, oscillator] of this.droneOscillators.entries()) {
+      const ratio = profile.harmony.droneRatios[index];
+      const detune = profile.harmony.droneDetune[index];
+      if (ratio === undefined || detune === undefined) continue;
+      setAudioParam(oscillator.frequency, profile.harmony.rootHz * ratio, at, 0.22);
+      setAudioParam(oscillator.detune, detune, at, 0.22);
+    }
+
+    for (const [index, oscillator] of this.choirOscillators.entries()) {
+      const ratio = profile.harmony.choirRatios[index];
+      const detune = profile.harmony.choirDetune[index];
+      const formantHz = profile.harmony.formantsHz[index];
+      if (ratio === undefined || detune === undefined || formantHz === undefined) continue;
+      setAudioParam(oscillator.frequency, profile.harmony.rootHz * ratio, at, 0.28);
+      setAudioParam(oscillator.detune, detune, at, 0.28);
+      const formant = this.choirFormants[index];
+      if (formant) setAudioParam(formant.frequency, formantHz, at, 0.32);
+    }
+
+    this.startAmbienceNoise(profile, at, true);
+    if (this.machineryOscillator) {
+      setAudioParam(this.machineryOscillator.frequency, profile.ambience.machineryHz, at, 0.28);
+    }
+    if (this.machineryGain) {
+      setAudioParam(this.machineryGain.gain, profile.ambience.machineryGain, at, 0.26);
+    }
   }
 
   private scheduleMusic(): void {
@@ -701,34 +809,68 @@ export class AudioDirector {
       return;
     }
 
+    const profile = this.chapterProfile;
     const mix = deriveAdaptiveAudioMix(this.currentSettings(), this.intensity);
-    const beatDuration = 60 / mix.tempo;
+    const beatDuration = 60 / chapterTempo(profile, this.intensity);
     if (this.nextBeatAt < context.currentTime - beatDuration)
       this.nextBeatAt = context.currentTime + 0.04;
 
     while (this.nextBeatAt < context.currentTime + 0.28) {
-      const accent = this.beat % 4 === 0;
-      if (accent || this.intensity > 0.58) this.percussion(this.nextBeatAt, accent, mix.percussion);
+      const accent = isChapterAccent(profile, this.beat);
+      if (accent || this.intensity > 0.58) {
+        this.percussion(this.nextBeatAt, accent, mix.percussion * profile.percussion.gain, profile);
+      }
 
-      if (this.intensity > 0.38 && this.beat % 2 === 1) {
-        const pitch = 880 + deterministicUnit(this.beat + 331) * 360;
-        this.musicNoise(this.nextBeatAt, 0.026, 0.035 + this.intensity * 0.03, pitch);
+      if (this.beat % profile.motif.everyBeats === 0) {
+        const frequency = chapterMotifFrequency(profile, this.motifPhrase);
+        this.motifPhrase += 1;
+        if (frequency !== null) {
+          this.musicTone(
+            this.nextBeatAt,
+            frequency,
+            beatDuration * profile.motif.durationBeats,
+            profile.motif.gain * (0.72 + this.intensity * 0.28),
+            profile.motif.waveform,
+          );
+        }
+      }
+
+      if (this.intensity > profile.texture.threshold && this.beat % 2 === 1) {
+        const variation = 0.82 + deterministicUnit(this.beat + profile.seed) * 0.36;
+        this.musicNoise(
+          this.nextBeatAt,
+          0.026,
+          (0.035 + this.intensity * 0.03) * profile.texture.gain,
+          profile.texture.filterHz * variation,
+        );
       }
 
       this.beat += 1;
-      this.nextBeatAt += beatDuration * (this.intensity > 0.72 ? 0.5 : 1);
+      this.nextBeatAt +=
+        beatDuration * (this.intensity > profile.percussion.subdivisionIntensity ? 0.5 : 1);
     }
   }
 
-  private percussion(at: number, accent: boolean, level: number): void {
+  private percussion(
+    at: number,
+    accent: boolean,
+    level: number,
+    profile: ChapterAudioProfile,
+  ): void {
     const context = this.context;
     const destination = this.musicBus;
     if (!context || !destination) return;
     const oscillator = context.createOscillator();
     const gain = context.createGain();
     oscillator.type = 'sine';
-    oscillator.frequency.setValueAtTime(accent ? 76 : 104, at);
-    oscillator.frequency.exponentialRampToValueAtTime(accent ? 34 : 58, at + 0.16);
+    oscillator.frequency.setValueAtTime(
+      accent ? profile.percussion.accentHz : profile.percussion.pulseHz,
+      at,
+    );
+    oscillator.frequency.exponentialRampToValueAtTime(
+      (accent ? profile.percussion.accentHz : profile.percussion.pulseHz) * 0.48,
+      at + 0.16,
+    );
     gain.gain.setValueAtTime(SILENCE, at);
     gain.gain.exponentialRampToValueAtTime(
       Math.max(SILENCE, level * (accent ? 0.42 : 0.2)),
@@ -740,6 +882,34 @@ export class AudioDirector {
     this.trackSource(oscillator, [gain]);
     oscillator.start(at);
     oscillator.stop(at + 0.34);
+  }
+
+  private musicTone(
+    at: number,
+    frequency: number,
+    duration: number,
+    gainAmount: number,
+    waveform: OscillatorType,
+  ): void {
+    const context = this.context;
+    const destination = this.musicBus;
+    if (!context || !destination) return;
+    const oscillator = context.createOscillator();
+    const filter = context.createBiquadFilter();
+    const gain = context.createGain();
+    oscillator.type = waveform;
+    oscillator.frequency.setValueAtTime(Math.max(1, frequency), at);
+    filter.type = 'lowpass';
+    filter.frequency.value = Math.min(5_400, Math.max(900, frequency * 9));
+    filter.Q.value = 0.7;
+    const end = at + Math.max(0.08, duration);
+    this.applyEnvelope(gain.gain, at, end, Math.min(0.24, duration * 0.18), gainAmount);
+    oscillator.connect(filter);
+    filter.connect(gain);
+    gain.connect(destination);
+    this.trackSource(oscillator, [filter, gain]);
+    oscillator.start(at);
+    oscillator.stop(end + 0.025);
   }
 
   private musicNoise(at: number, duration: number, gainAmount: number, frequency: number): void {
@@ -863,15 +1033,29 @@ export class AudioDirector {
     const context = this.context;
     if (!context) return;
     const mix = deriveAdaptiveAudioMix(settings, this.intensity);
+    const profile = this.chapterProfile;
     const now = context.currentTime;
     if (this.masterBus) setAudioParam(this.masterBus.gain, mix.master, now);
     if (this.musicBus) setAudioParam(this.musicBus.gain, mix.music, now);
     if (this.effectsBus) setAudioParam(this.effectsBus.gain, mix.effects, now);
     if (this.ambienceBus) setAudioParam(this.ambienceBus.gain, mix.ambience, now);
-    if (this.reverbGain) setAudioParam(this.reverbGain.gain, mix.reverb, now, 0.12);
-    if (this.droneGain) setAudioParam(this.droneGain.gain, mix.drone, now, 0.18);
-    if (this.choirGain) setAudioParam(this.choirGain.gain, mix.choir, now, 0.25);
-    if (this.musicFilter) setAudioParam(this.musicFilter.frequency, mix.musicFilterHz, now, 0.22);
+    if (this.reverbGain) {
+      setAudioParam(this.reverbGain.gain, mix.reverb * profile.mix.reverb, now, 0.12);
+    }
+    if (this.droneGain) {
+      setAudioParam(this.droneGain.gain, mix.drone * profile.mix.drone, now, 0.18);
+    }
+    if (this.choirGain) {
+      setAudioParam(this.choirGain.gain, mix.choir * profile.mix.choir, now, 0.25);
+    }
+    if (this.musicFilter) {
+      setAudioParam(
+        this.musicFilter.frequency,
+        profile.mix.filterBaseHz + profile.mix.filterRangeHz * this.intensity,
+        now,
+        0.22,
+      );
+    }
   }
 
   private currentSettings(): GameSettings {
@@ -979,6 +1163,13 @@ export class AudioDirector {
     this.droneGain = null;
     this.choirGain = null;
     this.musicFilter = null;
+    this.droneOscillators.length = 0;
+    this.choirOscillators.length = 0;
+    this.choirFormants.length = 0;
+    this.windSource = null;
+    this.windGain = null;
+    this.machineryOscillator = null;
+    this.machineryGain = null;
     this.noiseBuffer = null;
     if (this.scheduler !== null) clearInterval(this.scheduler);
     this.scheduler = null;

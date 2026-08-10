@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_SETTINGS } from '../../src/app/defaults';
-import { gameHost } from '../../src/app/GameHost';
+import { GameHost, gameHost } from '../../src/app/GameHost';
 import { gameStore } from '../../src/app/gameStore';
+import { CAMPAIGN_CHAPTERS } from '../../src/game/campaign';
 import type { RunStats, RuntimeOptions } from '../../src/game/types/GameTypes';
 
 const runtimeMocks = vi.hoisted(() => {
@@ -64,6 +65,8 @@ beforeEach(() => {
     pointerLockElement: null,
     exitPointerLock: vi.fn(async () => undefined),
   });
+  gameHost.newCampaign('normal');
+  gameStore.reset();
 });
 
 afterEach(() => {
@@ -74,6 +77,56 @@ afterEach(() => {
 });
 
 describe('GameHost lifecycle', () => {
+  it('shows the cold open once before entering the campaign map', () => {
+    const values = new Map<string, string>();
+    vi.stubGlobal('window', {
+      localStorage: {
+        getItem: vi.fn((key: string) => values.get(key) ?? null),
+        setItem: vi.fn((key: string, value: string) => values.set(key, value)),
+        removeItem: vi.fn((key: string) => values.delete(key)),
+      },
+    });
+    gameHost.newCampaign('normal');
+
+    gameHost.openCampaign();
+    expect(gameStore.getSnapshot().screen).toBe('prologue');
+
+    gameHost.completePrologue();
+    expect(gameStore.getSnapshot().screen).toBe('campaign');
+    expect(values.get('mark-of-the-veil:prologue:v1')).toBe('seen');
+
+    gameHost.returnToTitle();
+    gameHost.openCampaign();
+    expect(gameStore.getSnapshot().screen).toBe('campaign');
+  });
+
+  it('advances past the prologue for the session when browser storage is denied', () => {
+    const deniedHost = new GameHost();
+    vi.stubGlobal('window', {
+      localStorage: {
+        getItem: vi.fn(() => null),
+        setItem: vi.fn(() => {
+          throw new DOMException('blocked', 'SecurityError');
+        }),
+        removeItem: vi.fn(() => {
+          throw new DOMException('blocked', 'SecurityError');
+        }),
+      },
+    });
+    deniedHost.newCampaign('normal');
+
+    deniedHost.openCampaign();
+    expect(gameStore.getSnapshot().screen).toBe('prologue');
+
+    expect(() => deniedHost.completePrologue()).not.toThrow();
+    expect(gameStore.getSnapshot().screen).toBe('campaign');
+
+    deniedHost.returnToTitle();
+    deniedHost.openCampaign();
+    expect(gameStore.getSnapshot().screen).toBe('campaign');
+    deniedHost.dispose();
+  });
+
   it('disposes a partially started runtime before showing the fallback screen', async () => {
     const error = new Error('renderer initialization failed');
     runtimeMocks.start.mockRejectedValueOnce(error);
@@ -137,14 +190,14 @@ describe('GameHost lifecycle', () => {
     const options = runtimeMocks.construct.mock.calls[0]?.[0] as RuntimeOptions;
 
     options.callbacks.runEnded({ ...STATS, score: 7_999, rank: 'S' }, true);
-    expect(setItem).not.toHaveBeenCalled();
-    expect(gameStore.getSnapshot().screen).toBe('revelation');
+    expect(setItem.mock.calls.filter(([key]) => String(key).includes('best-run'))).toHaveLength(0);
+    expect(gameStore.getSnapshot().screen).toBe('chapterComplete');
 
     options.callbacks.runEnded({ ...STATS, score: 8_000, rank: 'S' }, true);
-    expect(setItem).toHaveBeenLastCalledWith(
+    expect(setItem.mock.calls).toContainEqual([
       'mark-of-the-veil:best-run:v1',
       JSON.stringify({ score: 8_000, elapsedSeconds: 100, rank: 'S' }),
-    );
+    ]);
 
     setItem.mockClear();
     options.callbacks.runEnded({ ...STATS, elapsedSeconds: 99 }, true);
@@ -154,7 +207,7 @@ describe('GameHost lifecycle', () => {
     );
   });
 
-  it('routes a successful run through Revelation and reuses the runtime for replay', async () => {
+  it('routes a successful chapter through debrief and reuses the runtime for replay', async () => {
     const setItem = vi.fn();
     vi.stubGlobal('window', {
       localStorage: { getItem: vi.fn(() => null), setItem },
@@ -163,11 +216,70 @@ describe('GameHost lifecycle', () => {
     const options = runtimeMocks.construct.mock.calls[0]?.[0] as RuntimeOptions;
 
     options.callbacks.runEnded(STATS, true);
-    expect(gameStore.getSnapshot()).toMatchObject({ screen: 'revelation', runStats: STATS });
+    expect(gameStore.getSnapshot()).toMatchObject({ screen: 'chapterComplete', runStats: STATS });
 
     gameHost.restart();
     expect(runtimeMocks.restart).toHaveBeenCalledTimes(1);
     expect(runtimeMocks.requestPointerLock).toHaveBeenCalledTimes(1);
     expect(gameStore.getSnapshot()).toMatchObject({ screen: 'playing', runStats: null });
+  });
+
+  it('persists the final transmission before completing the campaign', async () => {
+    const values = new Map<string, string>([['mark-of-the-veil:prologue:v1', 'seen']]);
+    vi.stubGlobal('window', {
+      localStorage: {
+        getItem: vi.fn((key: string) => values.get(key) ?? null),
+        setItem: vi.fn((key: string, value: string) => values.set(key, value)),
+        removeItem: vi.fn((key: string) => values.delete(key)),
+      },
+    });
+    gameHost.newCampaign('normal');
+
+    for (let chapterIndex = 0; chapterIndex < CAMPAIGN_CHAPTERS.length; chapterIndex += 1) {
+      await gameHost.start({} as HTMLCanvasElement, DEFAULT_SETTINGS, 'normal');
+      const options = runtimeMocks.construct.mock.calls.at(-1)?.[0] as RuntimeOptions;
+      options.callbacks.runEnded(STATS, true);
+      if (chapterIndex < CAMPAIGN_CHAPTERS.length - 1) gameHost.continueCampaign();
+    }
+
+    const revelation = CAMPAIGN_CHAPTERS.at(-1)?.objectives.find(
+      (objective) => objective.type === 'revelation',
+    );
+    if (!revelation || revelation.type !== 'revelation') {
+      throw new Error('Expected the final revelation objective');
+    }
+
+    expect(gameStore.getSnapshot().screen).toBe('revelation');
+    expect(gameHost.getCampaignProgress()).toMatchObject({
+      phase: 'revelation-pending',
+      currentObjectiveId: revelation.id,
+      revelationStage: 0,
+    });
+    expect(gameHost.getCampaignProgress().completedObjectiveIds).not.toContain(revelation.id);
+
+    gameHost.setRevelationStage(3);
+    gameHost.returnToTitle();
+    gameHost.openCampaign();
+    expect(gameStore.getSnapshot().screen).toBe('revelation');
+    expect(gameHost.getCampaignProgress().revelationStage).toBe(3);
+
+    gameHost.completeRevelation();
+    expect(gameHost.getCampaignProgress().phase).toBe('revelation-pending');
+
+    gameHost.setRevelationStage(revelation.transmissionIds.length - 1);
+    gameHost.completeRevelation();
+    expect(gameStore.getSnapshot().screen).toBe('victory');
+    expect(gameHost.getCampaignProgress()).toMatchObject({
+      phase: 'campaign-complete',
+      currentObjectiveId: null,
+      revelationStage: null,
+    });
+    expect(gameHost.getCampaignProgress().completedObjectiveIds).toContain(revelation.id);
+
+    gameHost.replayFinalChapter();
+    expect(gameStore.getSnapshot()).toMatchObject({
+      screen: 'chapterBriefing',
+      chapterId: 'the-root-choir',
+    });
   });
 });

@@ -24,7 +24,7 @@ describe('rendering profile selection', () => {
       bloom: true,
       multisamples: 0,
       maxPointLights: 7,
-      bloomResolutionScale: 0.72,
+      bloomResolutionScale: 0.64,
     });
   });
 

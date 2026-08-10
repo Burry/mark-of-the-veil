@@ -3,12 +3,19 @@ import { Keycap, MenuButton } from './Frame';
 
 interface TitleScreenProps {
   onBegin: () => void;
+  hasCampaign?: boolean;
   onSettings: () => void;
   onControls: () => void;
   onCredits: () => void;
 }
 
-export function TitleScreen({ onBegin, onSettings, onControls, onCredits }: TitleScreenProps) {
+export function TitleScreen({
+  onBegin,
+  hasCampaign = false,
+  onSettings,
+  onControls,
+  onCredits,
+}: TitleScreenProps) {
   return (
     <main className="title-screen screen-layer" aria-labelledby="game-title">
       <div className="title-ornament title-ornament--left" aria-hidden="true" />
@@ -28,7 +35,7 @@ export function TitleScreen({ onBegin, onSettings, onControls, onCredits }: Titl
 
         <nav className="main-menu" aria-label="Main menu">
           <MenuButton onClick={onBegin} primary autoFocus>
-            BEGIN DESCENT
+            {hasCampaign ? 'CONTINUE CAMPAIGN' : 'BEGIN CAMPAIGN'}
           </MenuButton>
           <MenuButton onClick={onSettings}>SETTINGS</MenuButton>
           <MenuButton onClick={onControls}>CONTROLS</MenuButton>

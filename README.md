@@ -106,7 +106,7 @@ The renderer adapts effects, forward lights, and internal resolution when frame 
 
 ## Run locally
 
-Requires Node.js 22.13 or newer. Node.js 24 is used in CI.
+Requires Node.js 22.13 through 24.x. Node.js 24 is used in CI and production.
 
 ```bash
 npm ci

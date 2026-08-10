@@ -236,7 +236,7 @@ export function SettingsPanel({
               min={0}
               max={1}
               step={0.01}
-              displayValue={`${Math.round(settings.masterVolume * 100)}`}
+              displayValue={`${Math.round(settings.masterVolume * 100)}%`}
               onChange={(value) => patch('masterVolume', value)}
             />
             <RangeRow
@@ -245,7 +245,7 @@ export function SettingsPanel({
               min={0}
               max={1}
               step={0.01}
-              displayValue={`${Math.round(settings.musicVolume * 100)}`}
+              displayValue={`${Math.round(settings.musicVolume * 100)}%`}
               onChange={(value) => patch('musicVolume', value)}
             />
             <RangeRow
@@ -254,7 +254,7 @@ export function SettingsPanel({
               min={0}
               max={1}
               step={0.01}
-              displayValue={`${Math.round(settings.effectsVolume * 100)}`}
+              displayValue={`${Math.round(settings.effectsVolume * 100)}%`}
               onChange={(value) => patch('effectsVolume', value)}
             />
             <RangeRow
@@ -263,7 +263,7 @@ export function SettingsPanel({
               min={0}
               max={1}
               step={0.01}
-              displayValue={`${Math.round(settings.ambienceVolume * 100)}`}
+              displayValue={`${Math.round(settings.ambienceVolume * 100)}%`}
               onChange={(value) => patch('ambienceVolume', value)}
             />
           </>

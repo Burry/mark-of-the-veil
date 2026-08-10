@@ -5,9 +5,12 @@ interface ArchiveScreenProps {
   onBack: () => void;
 }
 
+type ControlRow = readonly [action: string, input: string];
+
 const KEYBOARD_CONTROLS = [
   ['MOVE', 'W A S D'],
   ['LOOK / AIM', 'MOUSE'],
+  ['FOCUS / AIM', 'RMB'],
   ['FIRE SUNLANCE', 'LMB'],
   ['HORN PULSE', 'Q'],
   ['HOOF DASH', 'SPACE'],
@@ -15,11 +18,12 @@ const KEYBOARD_CONTROLS = [
   ['INTERACT', 'E'],
   ['SWITCH VIEW', 'V'],
   ['PAUSE', 'ESC'],
-];
+] satisfies readonly ControlRow[];
 
 const GAMEPAD_CONTROLS = [
   ['MOVE', 'LEFT STICK'],
   ['LOOK / AIM', 'RIGHT STICK'],
+  ['FOCUS / AIM', 'LT'],
   ['FIRE SUNLANCE', 'RT'],
   ['HORN PULSE', 'LB'],
   ['HOOF DASH', 'A'],
@@ -27,9 +31,9 @@ const GAMEPAD_CONTROLS = [
   ['INTERACT', 'X'],
   ['SWITCH VIEW', 'Y'],
   ['PAUSE', 'START'],
-];
+] satisfies readonly ControlRow[];
 
-function ControlColumn({ title, rows }: { title: string; rows: string[][] }) {
+function ControlColumn({ title, rows }: { title: string; rows: readonly ControlRow[] }) {
   return (
     <section className="control-column">
       <h3>{title}</h3>
@@ -66,7 +70,7 @@ export function ControlsScreen({ onBack }: ArchiveScreenProps) {
         </div>
         <div className="controls-note">
           <span>AIM</span> Hold before firing for tighter spread and shoulder alignment.
-          <span>FOCUS</span> Arrow keys, D-pad, Enter / A, and Escape / B navigate every menu.
+          <span>FOCUS</span> Arrow keys, D-pad, Enter / A, and Escape / B navigate menus.
         </div>
         <div className="panel-actions panel-actions--center">
           <MenuButton onClick={onBack} primary autoFocus>
@@ -90,12 +94,12 @@ export function CreditsScreen({ onBack }: ArchiveScreenProps) {
         </div>
         <blockquote>
           “A broken oath is still a path home.”
-          <cite>— Mark, last pilot of the Wayfarer</cite>
+          <cite>Mark, last pilot of the Wayfarer</cite>
         </blockquote>
         <div className="credit-roll">
           <div>
-            <span>CREATED FOR THE OPEN WEB</span>
-            <strong>MARK OF THE VEIL</strong>
+            <span>PROJECT DIRECTION</span>
+            <strong>GRANT BURRY</strong>
           </div>
           <div>
             <span>PROTAGONIST</span>
@@ -114,14 +118,14 @@ export function CreditsScreen({ onBack }: ArchiveScreenProps) {
             <strong>GENERATIVE WEB AUDIO</strong>
           </div>
           <div>
-            <span>DESIGN + ENGINEERING</span>
-            <strong>OPENAI CODEX</strong>
+            <span>INITIAL BUILD + ITERATION</span>
+            <strong>GPT-5.6 SOL ULTRA · CODEX</strong>
           </div>
         </div>
         <p className="credits-legal">
-          An original science-fantasy game. Project-authored imagery, geometry, sound, music, and UI
-          are joined by the credited public-domain environment sources. Full provenance ships with
-          the repository.
+          An original science-fantasy game. Generated image plates and material maps, code-authored
+          geometry, procedural sound, and UI are joined by credited CC0 environment sources. Full
+          provenance ships with the repository.
         </p>
         <div className="panel-actions panel-actions--center">
           <MenuButton onClick={onBack} primary autoFocus>

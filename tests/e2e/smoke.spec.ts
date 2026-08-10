@@ -6,7 +6,7 @@ test.describe('Mark of the Veil production shell', () => {
   test('title navigation and settings persistence work', async ({ page }) => {
     await page.goto('/');
 
-    await expect(page).toHaveTitle('Mark of the Veil — Cinematic Science-Fantasy Game');
+    await expect(page).toHaveTitle('Mark of the Veil | Cinematic Science-Fantasy Game');
     await expect(page.getByRole('heading', { name: 'Mark of the Veil' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'BEGIN DESCENT' })).toBeVisible();
 
@@ -100,6 +100,12 @@ test.describe('Mark of the Veil production shell', () => {
     await expect(page.locator('#game-canvas')).toHaveClass(/is-visible/);
     await expect(page.getByText('RECOVER THE TALISMAN')).toBeVisible({ timeout: 120_000 });
     await expect(page.getByText('THIRD', { exact: true })).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('heading', { name: 'PAUSED' })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('heading', { name: 'PAUSED' })).toBeHidden();
+    await expect(page.getByText('RECOVER THE TALISMAN')).toBeVisible();
 
     // GitHub's CPU-backed SwiftShader reliably validates the real arena boot, but sustained
     // interaction can starve or terminate its software GPU process. Hardware-backed local/native

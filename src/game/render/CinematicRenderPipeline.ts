@@ -56,9 +56,10 @@ export class CinematicRenderPipeline {
   private internalResolutionScale = 1;
   private calibrationTimer = 0;
   private frozenSeconds = 0;
-  private readonly pathTracingDisabledForDiagnostics =
+  private readonly diagnosticsEnabled =
     typeof window !== 'undefined' &&
     new URLSearchParams(window.location.search).get('diagnostics') === '1';
+  private readonly pathTracingDisabledForDiagnostics = this.diagnosticsEnabled;
 
   constructor(
     private readonly renderer: THREE.WebGLRenderer,
@@ -164,7 +165,7 @@ export class CinematicRenderPipeline {
         this.lightBudget.setSuspended(true);
         void this.pathTracedPresentation.activate();
         if (this.pathTracedPresentation.render()) {
-          this.publishRenderStats();
+          if (this.diagnosticsEnabled) this.publishRenderStats();
           return;
         }
       }
@@ -174,7 +175,7 @@ export class CinematicRenderPipeline {
       this.pathTracedPresentation.deactivate();
     }
     this.composer.render(deltaSeconds);
-    this.publishRenderStats();
+    if (this.diagnosticsEnabled) this.publishRenderStats();
   }
 
   updateSettings(settings: GameSettings): void {
@@ -299,9 +300,11 @@ export class CinematicRenderPipeline {
       Math.max(1, Math.floor(this.width * effectivePixelRatio * gtaoScale)),
       Math.max(1, Math.floor(this.height * effectivePixelRatio * gtaoScale)),
     );
-    this.renderer.domElement.dataset.effectiveComposerPixelRatio = effectivePixelRatio.toFixed(3);
-    this.renderer.domElement.dataset.bloomResolutionScale = bloomScale.toFixed(3);
-    this.renderer.domElement.dataset.gtaoResolutionScale = gtaoScale.toFixed(3);
+    if (this.diagnosticsEnabled) {
+      this.renderer.domElement.dataset.effectiveComposerPixelRatio = effectivePixelRatio.toFixed(3);
+      this.renderer.domElement.dataset.bloomResolutionScale = bloomScale.toFixed(3);
+      this.renderer.domElement.dataset.gtaoResolutionScale = gtaoScale.toFixed(3);
+    }
     this.updateResolutionUniforms();
   }
 

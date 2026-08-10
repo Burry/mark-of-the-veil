@@ -54,6 +54,8 @@ export class GameRuntime implements GameRuntimePort {
   private readonly callbacks: RuntimeOptions['callbacks'];
   private readonly seed: number;
   private readonly random: SeededRandom;
+  private readonly diagnosticsEnabled =
+    typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('diagnostics');
   private readonly scene = new THREE.Scene();
   private readonly camera = new THREE.PerspectiveCamera(68, 16 / 9, 0.06, 130);
   private readonly audio: AudioDirector;
@@ -166,8 +168,12 @@ export class GameRuntime implements GameRuntimePort {
       this.settings.quality,
       this.settings.reducedFlashes,
     );
-    this.arena = await createArena(this.scene, this.renderer, this.settings.quality, this.random);
-    if (this.disposed) return;
+    const arena = await createArena(this.scene, this.renderer, this.settings.quality, this.random);
+    if (this.disposed) {
+      this.disposeArena(arena);
+      return;
+    }
+    this.arena = arena;
     this.callbacks.publish({ loadingProgress: 0.8 });
 
     this.mark = createMark();
@@ -220,6 +226,7 @@ export class GameRuntime implements GameRuntimePort {
 
   resume(): void {
     if (!this.started || this.runEnded || this.encounter?.phase === 'upgrade') return;
+    this.input?.clearHeld();
     this.paused = false;
     this.lastFrameTime = performance.now();
     void this.audio.resume();
@@ -229,6 +236,7 @@ export class GameRuntime implements GameRuntimePort {
 
   restart(): void {
     if (!this.started || this.disposed) return;
+    this.input?.clearHeld();
     this.resetRun();
     this.paused = false;
     this.lastFrameTime = performance.now();
@@ -265,7 +273,7 @@ export class GameRuntime implements GameRuntimePort {
     void this.audio.resume().then(() => this.audio.play('boss', boss.rig.root.position));
     this.haptics.resume();
     this.haptics.play('boss', 1, this.input?.getGamepad() ?? undefined);
-    this.setCaption('THE HOLLOW REGENT — Crown made hungry.', 3.8);
+    this.setCaption('THE HOLLOW REGENT: Crown made hungry.', 3.8);
     this.callbacks.publish({
       selectedUpgrade: id,
       bossName: 'HOLLOW REGENT',
@@ -329,17 +337,22 @@ export class GameRuntime implements GameRuntimePort {
       this.firstPersonWeapon = null;
     }
     if (this.arena) {
-      const sceneLights = this.arena.root.userData.sceneLights as THREE.Light[] | undefined;
-      sceneLights?.forEach((light) => light.removeFromParent());
-      this.arena.root.removeFromParent();
-      disposeObject(this.arena.root);
-      this.arena.surfaceTextures.forEach((texture) => texture.dispose());
+      this.disposeArena(this.arena);
       this.arena = null;
     }
     this.scene.environment = null;
     this.renderer?.renderLists.dispose();
     this.renderer?.dispose();
     this.renderer = null;
+  }
+
+  private disposeArena(arena: ArenaRig): void {
+    const sceneLights = arena.root.userData.sceneLights as THREE.Light[] | undefined;
+    sceneLights?.forEach((light) => light.removeFromParent());
+    arena.root.removeFromParent();
+    disposeObject(arena.root);
+    arena.surfaceTextures.forEach((texture) => texture.dispose());
+    this.scene.environment = null;
   }
 
   private resetRun(): void {
@@ -409,20 +422,14 @@ export class GameRuntime implements GameRuntimePort {
       this.fps = Math.round(this.fpsFrames / this.fpsTime);
       this.fpsFrames = 0;
       this.fpsTime = 0;
+      if (this.diagnosticsEnabled) this.renderer.domElement.dataset.fps = String(this.fps);
     }
     if (this.paused) {
-      const pausedInput = this.input?.sample(Math.min(delta, 0.016));
-      if (pausedInput?.pausePressed && !this.runEnded && this.encounter?.phase !== 'upgrade') {
-        this.resume();
-        this.callbacks.requestScreen('playing');
-        this.requestPointerLock();
-      }
       if (this.renderPipeline) {
         this.renderPipeline.render(delta, true);
       } else {
         this.renderer.render(this.scene, this.camera);
       }
-      this.renderer.domElement.dataset.fps = String(this.fps);
       return;
     }
     this.update(delta);
@@ -431,7 +438,6 @@ export class GameRuntime implements GameRuntimePort {
     } else {
       this.renderer.render(this.scene, this.camera);
     }
-    this.renderer.domElement.dataset.fps = String(this.fps);
   };
 
   private update(delta: number): void {
@@ -446,11 +452,6 @@ export class GameRuntime implements GameRuntimePort {
     )
       return;
     const input = this.input.sample(delta);
-    if (input.pausePressed) {
-      this.pause();
-      this.callbacks.requestScreen('paused');
-      return;
-    }
     this.worldTime += delta;
     this.runTime += delta;
     this.snapshotTime += delta;
@@ -722,7 +723,7 @@ export class GameRuntime implements GameRuntimePort {
     this.cameraTrauma = Math.max(this.cameraTrauma, 0.28);
     this.audio.play('pulse', center);
     this.haptics.play('pulse', 1, this.input?.getGamepad() ?? undefined);
-    this.setCaption('STORMHORN — Veil resonance discharged.', 1.7);
+    this.setCaption('STORMHORN: Veil resonance discharged.', 1.7);
   }
 
   private recordKill(result: EnemyDamageResult): void {
@@ -827,7 +828,7 @@ export class GameRuntime implements GameRuntimePort {
     this.effects.pulse(this.arena.extraction.root.position, 16, 0x92ddff, 1.4);
     this.audio.play('boss', this.playerPosition);
     this.haptics.play('boss', 1, this.input?.getGamepad() ?? undefined);
-    this.setCaption('REGENT DOWN. Its root channel is exposed — enter the Choir!', 3.2);
+    this.setCaption('REGENT DOWN. Its root channel is exposed. Enter the Choir!', 3.2);
     this.callbacks.publish({ bossName: null, bossHealth: 0, bossMaxHealth: 0 });
   }
 
@@ -881,7 +882,7 @@ export class GameRuntime implements GameRuntimePort {
     this.snapshotTime = 0;
     const boss = this.enemies.boss;
     const presentation = this.encounter.presentation(this.playerPosition);
-    if (this.renderer && new URLSearchParams(window.location.search).has('diagnostics')) {
+    if (this.renderer && this.diagnosticsEnabled) {
       const canvas = this.renderer.domElement;
       canvas.dataset.playerX = this.playerPosition.x.toFixed(2);
       canvas.dataset.playerZ = this.playerPosition.z.toFixed(2);

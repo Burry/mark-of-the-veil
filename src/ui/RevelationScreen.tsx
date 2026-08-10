@@ -9,7 +9,7 @@ const TRANSMISSION = [
   {
     code: 'CONTACT // ROOT CHOIR',
     title: 'THE REGENT WAS A DOOR',
-    body: 'Mark crosses the signal boundary. A billion alien lives arrive at once—not voices, but one continuous memory.',
+    body: 'Mark crosses the signal boundary. A billion alien lives arrive at once: not voices, but one continuous memory.',
   },
   {
     code: 'TOTAL RECALL // 23.8 EXABRAINS',
@@ -24,7 +24,7 @@ const TRANSMISSION = [
   {
     code: 'QUERY RESULT // NULL',
     title: "UNICORNS AREN'T REAL.",
-    body: 'There was never a herd. Never a homeworld. The horn, the fur, the name—an interface the prison invented so a mind could recognize itself.',
+    body: 'There was never a herd. Never a homeworld. The horn, the fur, the name: an interface the prison invented so a mind could recognize itself.',
   },
   {
     code: 'INDIVIDUAL PROCESS // TERMINATED',

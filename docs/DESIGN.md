@@ -1,4 +1,4 @@
-# MARK OF THE VEIL — production design
+# Mark of the Veil: production design
 
 ## Product promise
 
@@ -11,16 +11,20 @@ flooded cathedral-city arena → choose one relic upgrade → defeat the Hollow 
 alien Root Choir → receive total knowledge, lose the fiction of being a unicorn, cease to exist →
 receive a score and rank.
 
-## Accepted visual references
+## Generated visual targets
 
-- [`concepts/gameplay-spec.jpg`](./concepts/gameplay-spec.jpg) — primary play-surface, camera,
+- [`concepts/gameplay-spec.jpg`](./concepts/gameplay-spec.jpg): primary play-surface, camera,
   enemy language, palette, material, VFX, and HUD specification.
-- [`concepts/menu-spec.jpg`](./concepts/menu-spec.jpg) — title, menu, focus state, and settings
+- [`concepts/menu-spec.jpg`](./concepts/menu-spec.jpg): title, menu, focus state, and settings
   specification.
 
+These images were generated during development as visual targets. They are not gameplay screenshots
+and are separate from the original concept image supplied by a friend.
+
 The supplied source art is inspiration only and is intentionally excluded from this repository.
-Shipped art is original generated imagery, code-authored geometry, procedural audio/VFX, or the
-compact CC0 photoscan/HDR assets itemized in `THIRD_PARTY_NOTICES.md`.
+Shipped art consists of project-specific generated imagery, code-authored geometry, procedural
+audio and VFX, and the compact CC0 photoscan and HDR assets itemized in
+`THIRD_PARTY_NOTICES.md`.
 
 ## Design system
 
@@ -45,18 +49,18 @@ rounded card grids.
 
 - `public/assets/title-background.jpg`: generated full-bleed title plate, no baked UI.
 - `public/assets/storm-city.jpg`: generated distant city/Crown backplate for the arena.
-- `public/assets/bio-gothic-surface.jpg`: project-authored alien masonry albedo; it does not embed
+- `public/assets/bio-gothic-surface.jpg`: generated alien masonry albedo; it does not embed
   the user's inspiration art.
 - `public/assets/pbr/stone_tiles_03/`: Poly Haven CC0 1K photoscan diffuse, OpenGL normal, and
   roughness maps for the flooded nave.
 - `public/assets/hdri/rooftop-night-1k.hdr`: Poly Haven CC0 HDR image-based lighting source.
-- `public/assets/materials/mark-fur-*`: project-authored 1K albedo, height, and roughness maps derived
-  from an original generated cross-polarized fur scan; the v2 albedo is contrast-graded for the
+- `public/assets/materials/mark-fur-*`: generated 1K albedo, height, and roughness maps based on a
+  cross-polarized fur material study; the v2 albedo is contrast-graded for the
   runtime's HDR lighting response.
-- `public/assets/materials/mark-armor-*`: project-authored 1K albedo, height, and roughness maps for
+- `public/assets/materials/mark-armor-*`: generated 1K albedo, height, and roughness maps for
   chipped black oxide, scratched blued steel, soot, and restrained oxidation on Mark's tactical
   harness and Sunlance.
-- `public/assets/materials/hive-chitin-*`: project-authored 1K albedo, height, and roughness maps for
+- `public/assets/materials/hive-chitin-*`: generated 1K albedo, height, and roughness maps for
   wet biomechanical chitin, ribbed plates, tissue seams, mineral pitting, and iridescent wear.
 - Mark, enemies, seals, cover, weapon, ship, particles, HUD icons, and animation are authored as
   procedural Three.js/CSS/SVG systems so they work from every camera angle.
@@ -81,4 +85,5 @@ use lower opacity, normal blending, and fewer particles. Gameplay timing and thr
 unchanged.
 
 Quality tiers cap device pixel ratio and particle density. The production target is 60 FPS on a
-modern desktop at medium quality and a usable 30 FPS low tier.
+modern desktop at medium quality and a usable 30 FPS low tier. Renderer effects update live. Arena
+density and particle-pool changes apply when the next mission starts.

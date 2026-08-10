@@ -2,12 +2,32 @@
   "name": "mark-of-the-veil",
   "version": "1.0.0",
   "private": true,
-  "description": "A cinematic browser action game starring Mark, a battle-worn unicorn starfighter pilot.",
+  "description": "A cinematic science-fantasy WebGL action game with first-person and third-person combat.",
+  "license": "MIT",
+  "homepage": "https://mark-of-the-veil.vercel.app/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Burry/mark-of-the-veil.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Burry/mark-of-the-veil/issues"
+  },
+  "keywords": [
+    "browser-game",
+    "gamepad",
+    "react",
+    "science-fantasy",
+    "threejs",
+    "typescript",
+    "vite",
+    "web-audio",
+    "webgl"
+  ],
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
+    "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview --host 0.0.0.0",
+    "preview": "vite preview",
     "typecheck": "tsc -b --pretty false",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",

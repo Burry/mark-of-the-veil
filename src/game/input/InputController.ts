@@ -13,7 +13,6 @@ export interface InputFrame {
   reloadPressed: boolean;
   interactPressed: boolean;
   perspectivePressed: boolean;
-  pausePressed: boolean;
 }
 
 interface InputCallbacks {
@@ -98,7 +97,6 @@ export class InputController {
     let reloadPressed = this.consumeKey('KeyR');
     let interactPressed = this.consumeKey('KeyE');
     let perspectivePressed = this.consumeKey('KeyV');
-    let pausePressed = this.consumeKey('Escape');
 
     if (gamepad) {
       const stickX = applyDeadzone(gamepad.axes[0] ?? 0, settings.gamepadDeadzone);
@@ -119,7 +117,6 @@ export class InputController {
       interactPressed ||= this.gamepadPressed(gamepad, 2);
       perspectivePressed ||= this.gamepadPressed(gamepad, 3);
       pulsePressed ||= this.gamepadPressed(gamepad, 4);
-      pausePressed ||= this.gamepadPressed(gamepad, 9);
 
       const gamepadActive =
         Math.abs(stickX) + Math.abs(stickY) + Math.abs(viewX) + Math.abs(viewY) > 0.1 ||
@@ -153,7 +150,6 @@ export class InputController {
       reloadPressed,
       interactPressed,
       perspectivePressed,
-      pausePressed,
     };
   }
 
@@ -179,7 +175,8 @@ export class InputController {
     this.keys.clear();
     this.pressedKeys.clear();
     this.mouseButtons.clear();
-    this.previousButtons = [];
+    this.previousButtons =
+      this.getGamepad()?.buttons.map((button) => button.pressed || button.value > 0.5) ?? [];
     this.mouseDeltaX = 0;
     this.mouseDeltaY = 0;
   }

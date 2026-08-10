@@ -1,4 +1,4 @@
-import type { GameSnapshot, RunStats, UpgradeId } from '../game/types/GameTypes';
+import type { BestRun, GameSnapshot, RunStats, UpgradeId } from '../game/types/GameTypes';
 import { CarrotIcon, OverdriveIcon, PulseIcon, ResolveIcon, SigilIcon } from './Icons';
 import { Frame, MenuButton } from './Frame';
 
@@ -141,11 +141,12 @@ function ResultStats({ stats }: { stats: RunStats | null }) {
 interface ResultScreenProps {
   victory: boolean;
   stats: RunStats | null;
+  bestRun: BestRun;
   onReplay: () => void;
   onTitle: () => void;
 }
 
-export function ResultScreen({ victory, stats, onReplay, onTitle }: ResultScreenProps) {
+export function ResultScreen({ victory, stats, bestRun, onReplay, onTitle }: ResultScreenProps) {
   return (
     <main className={`result-screen screen-layer ${victory ? 'is-victory' : 'is-defeat'}`}>
       <Frame className="result-panel" label={victory ? 'Mission complete' : 'Mission failed'}>
@@ -159,7 +160,7 @@ export function ResultScreen({ victory, stats, onReplay, onTitle }: ResultScreen
         <span className="result-copy">
           {victory
             ? 'The Choir remembers every thought he carried. It remembers the unicorn called Mark, even though no unicorn ever existed.'
-            : 'The Crown closes over Vespera—but a broken oath can be sworn again.'}
+            : 'The Crown closes over Vespera, but a broken oath can be sworn again.'}
         </span>
         {stats && (
           <div className="result-rank" aria-label={`Rank ${stats.rank}`}>
@@ -167,6 +168,14 @@ export function ResultScreen({ victory, stats, onReplay, onTitle }: ResultScreen
           </div>
         )}
         <ResultStats stats={stats} />
+        {bestRun.score > 0 && (
+          <div className="result-best" aria-label="Personal best">
+            <span>PERSONAL BEST</span>
+            <strong>RANK {bestRun.rank}</strong>
+            <span>{bestRun.score.toLocaleString()} PTS</span>
+            <span>{formatTime(bestRun.elapsedSeconds)}</span>
+          </div>
+        )}
         <div className="panel-actions panel-actions--center">
           <MenuButton onClick={onReplay} primary autoFocus>
             {victory ? 'DESCEND AGAIN' : 'RISE AGAIN'}

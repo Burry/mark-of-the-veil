@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { gameHost, setScreen } from './GameHost';
 import { gameStore } from './gameStore';
-import { loadSettings, saveSettings } from './storage';
+import { loadBestRun, loadSettings, saveSettings } from './storage';
 import type { Difficulty, GameScreen, GameSettings, UpgradeId } from '../game/types/GameTypes';
 import { CreditsScreen, ControlsScreen } from '../ui/ArchiveScreens';
 import { BriefingScreen } from '../ui/BriefingScreen';
@@ -205,6 +205,7 @@ export function App() {
           <ResultScreen
             victory={snapshot.screen === 'victory'}
             stats={snapshot.runStats}
+            bestRun={loadBestRun()}
             onReplay={() => gameHost.restart()}
             onTitle={returnToTitle}
           />

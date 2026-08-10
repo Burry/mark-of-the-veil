@@ -4,7 +4,7 @@ test.describe('Mark of the Veil production shell', () => {
   test('title navigation and settings persistence work', async ({ page }) => {
     await page.goto('/');
 
-    await expect(page).toHaveTitle('Mark of the Veil');
+    await expect(page).toHaveTitle('Mark of the Veil — Cinematic Science-Fantasy Game');
     await expect(page.getByRole('heading', { name: 'Mark of the Veil' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'BEGIN DESCENT' })).toBeVisible();
 
@@ -34,6 +34,47 @@ test.describe('Mark of the Veil production shell', () => {
     await page.getByRole('button', { name: 'CONTROLS' }).click();
     await expect(page.getByRole('heading', { name: 'CONTROLS' })).toBeVisible();
     await expect(page.getByText('Both cameras share one center-screen aim ray.')).toBeVisible();
+  });
+
+  test('production metadata and install assets are discoverable', async ({ page, request }) => {
+    await page.goto('/');
+
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+      'href',
+      'https://mark-of-the-veil.vercel.app/',
+    );
+    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+      'content',
+      'https://mark-of-the-veil.vercel.app/og-image.jpg',
+    );
+    await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute(
+      'content',
+      'summary_large_image',
+    );
+
+    for (const asset of [
+      '/manifest.webmanifest',
+      '/robots.txt',
+      '/sitemap.xml',
+      '/og-image.jpg',
+      '/apple-touch-icon.png',
+      '/pwa-192x192.png',
+      '/pwa-512x512.png',
+      '/pwa-maskable-512x512.png',
+    ]) {
+      expect((await request.get(asset)).ok(), `${asset} should be served`).toBe(true);
+    }
+
+    const socialImageSize = await page.evaluate(
+      () =>
+        new Promise<{ height: number; width: number }>((resolve, reject) => {
+          const image = new Image();
+          image.onload = () => resolve({ width: image.naturalWidth, height: image.naturalHeight });
+          image.onerror = () => reject(new Error('Unable to load the OpenGraph image.'));
+          image.src = '/og-image.jpg';
+        }),
+    );
+    expect(socialImageSize).toEqual({ width: 1200, height: 630 });
   });
 
   test('live mission boot, cameras, pause, movement, and interaction respond', async ({ page }) => {

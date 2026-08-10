@@ -1,18 +1,41 @@
 {
+  "id": "/",
   "name": "Mark of the Veil",
-  "short_name": "Mark of the Veil",
-  "description": "A cinematic science-fantasy browser action game.",
+  "short_name": "Mark: Veil",
+  "description": "Play as Mark, a battle-worn unicorn pilot, in a cinematic WebGL science-fantasy action game with first- and third-person combat.",
+  "lang": "en",
+  "dir": "ltr",
   "start_url": "/",
-  "display": "fullscreen",
+  "scope": "/",
+  "display": "standalone",
   "orientation": "landscape",
   "background_color": "#05070c",
   "theme_color": "#05070c",
+  "categories": ["games", "entertainment"],
   "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
     {
       "src": "/mark-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }
